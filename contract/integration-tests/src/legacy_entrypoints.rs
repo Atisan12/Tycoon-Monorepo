@@ -25,11 +25,7 @@ mod tests {
     extern crate std;
 
     use crate::fixture::Fixture;
-    use soroban_sdk::{
-        testutils::Address as _,
-        token::StellarAssetClient,
-        Address, String,
-    };
+    use soroban_sdk::{testutils::Address as _, Address, String};
 
     // -------------------------------------------------------------------------
     // 1. redeem_voucher — hard-deprecated entrypoint

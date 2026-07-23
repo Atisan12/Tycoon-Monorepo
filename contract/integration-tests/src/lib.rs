@@ -1,6 +1,13 @@
 // Cross-contract integration tests for the Tycoon smart contract suite (#411).
 // Each module exercises a distinct cross-contract flow.
 // All tests use an isolated Soroban Env — no shared state between tests.
+//
+// SAFETY RULE (#1359): Integration tests MUST use `Env::default()` exclusively.
+// Never construct a network-connected environment (e.g. via the Stellar CLI or
+// `soroban_sdk::Env::from_ledger_snapshot_file`) in this crate.
+// Connecting to a shared staging network from CI can corrupt shared contract
+// state for all developers. The CI job has `STELLAR_NETWORK` unset deliberately;
+// any attempt to read it will fail fast rather than silently mutate staging.
 #[cfg(test)]
 mod fixture;
 #[cfg(test)]

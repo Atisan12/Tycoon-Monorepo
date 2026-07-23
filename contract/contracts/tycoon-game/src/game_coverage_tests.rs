@@ -236,7 +236,7 @@ mod tests {
     fn gct_06_transfer_ownership_changes_admin() {
         let env = Env::default();
         env.mock_all_auths();
-        let (contract_id, client, _old_owner, tyc_id, usdc_id) = setup(&env);
+        let (contract_id, client, _old_owner, tyc_id, _usdc_id) = setup(&env);
 
         let new_owner = Address::generate(&env);
         client.admin_transfer_ownership(&new_owner);

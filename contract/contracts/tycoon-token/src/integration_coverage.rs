@@ -153,7 +153,7 @@ mod tests {
     /// After admin rotation, new admin can mint and supply is correct.
     #[test]
     fn new_admin_mints_supply_correct_after_rotation() {
-        let (e, client, admin) = setup();
+        let (e, client, _admin) = setup();
         let new_admin = Address::generate(&e);
         let user = Address::generate(&e);
         let mint_amount: i128 = 5_000_000_000_000_000_000_000;
@@ -219,9 +219,9 @@ mod tests {
         }
 
         // Players trade among themselves
-        client.transfer(&players[0], &players[1], &share / 2);
-        client.transfer(&players[2], &players[3], &share / 4);
-        client.transfer(&players[1], &players[2], &share / 3);
+        client.transfer(&players[0], &players[1], &(share / 2));
+        client.transfer(&players[2], &players[3], &(share / 4));
+        client.transfer(&players[1], &players[2], &(share / 3));
 
         // Supply must be unchanged
         assert_eq!(client.total_supply(), SUPPLY);
@@ -291,7 +291,7 @@ mod tests {
     /// Admin can mint tokens to their own address; balance and supply update correctly.
     #[test]
     fn admin_can_mint_to_self() {
-        let (e, client, admin) = setup();
+        let (_e, client, admin) = setup();
         let mint_amount: i128 = 1_000_000_000_000_000_000_000;
         let balance_before = client.balance(&admin);
 
@@ -306,7 +306,7 @@ mod tests {
     /// Transferring tokens to oneself must leave the net balance unchanged.
     #[test]
     fn transfer_to_self_is_net_noop() {
-        let (e, client, admin) = setup();
+        let (_e, client, admin) = setup();
         let balance_before = client.balance(&admin);
         let supply_before = client.total_supply();
 

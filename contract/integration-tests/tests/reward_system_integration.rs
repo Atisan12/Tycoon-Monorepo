@@ -14,7 +14,13 @@ use soroban_sdk::{
 };
 use tycoon_reward_system::{TycoonRewardSystem, TycoonRewardSystemClient};
 
-fn setup() -> (Env, Address, Address, Address, TycoonRewardSystemClient<'static>) {
+fn setup() -> (
+    Env,
+    Address,
+    Address,
+    Address,
+    TycoonRewardSystemClient<'static>,
+) {
     let env = Env::default();
     env.mock_all_auths();
 
@@ -314,7 +320,7 @@ fn test_unauthorized_call_rejection() {
 /// AC4.4: Admin can update the backend minter; new minter can mint.
 #[test]
 fn test_admin_authorization_update() {
-    let (env, admin, tyc_id, _reward_id, reward) = setup();
+    let (env, _admin, tyc_id, _reward_id, reward) = setup();
     let new_minter = Address::generate(&env);
     let player = Address::generate(&env);
     let value: u128 = 10_000_000_000_000_000_000;

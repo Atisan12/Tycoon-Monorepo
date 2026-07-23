@@ -20,7 +20,7 @@ mod tests {
 
     #[test]
     fn sim_01_game_reward_cycle() {
-        let (_, client, admin) = setup();
+        let (_, client, _admin) = setup();
         let pool = Address::generate(&client.env);
         let winner = Address::generate(&client.env);
 
@@ -63,7 +63,7 @@ mod tests {
 
     #[test]
     fn sim_04_admin_rotation() {
-        let (_, client, admin) = setup();
+        let (_, client, _admin) = setup();
         let new_admin = Address::generate(&client.env);
         let user = Address::generate(&client.env);
 

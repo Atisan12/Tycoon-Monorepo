@@ -1,4 +1,3 @@
-#![cfg(test)]
 //! # Boost System Cross-Contract Integration Tests
 //!
 //! Integration tests for the tycoon-boost-system contract interacting with other

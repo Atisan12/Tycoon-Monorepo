@@ -140,18 +140,20 @@ fn test_inv_04_total_supply_never_negative() {
 
 // ── INV-05 ────────────────────────────────────────────────────────────────────
 
-/// INV-05: minting zero is rejected.
+/// INV-05: minting zero is a no-op (balance and supply unchanged).
 #[test]
-#[should_panic(expected = "Amount must be positive")]
-fn test_inv_05a_mint_zero_rejected() {
+fn test_inv_05a_mint_zero_is_noop() {
     let (_, client, _) = setup();
     let user = Address::generate(&client.env);
+    let before = client.total_supply();
     client.mint(&user, &0);
+    assert_eq!(client.balance(&user), 0);
+    assert_eq!(client.total_supply(), before);
 }
 
 /// INV-05: minting a negative amount is rejected.
 #[test]
-#[should_panic(expected = "Amount must be positive")]
+#[should_panic(expected = "Amount cannot be negative")]
 fn test_inv_05b_mint_negative_rejected() {
     let (_, client, _) = setup();
     let user = Address::generate(&client.env);
@@ -160,17 +162,20 @@ fn test_inv_05b_mint_negative_rejected() {
 
 // ── INV-06 ────────────────────────────────────────────────────────────────────
 
-/// INV-06: burning zero is rejected.
+/// INV-06: burning zero is a no-op (balance and supply unchanged).
 #[test]
-#[should_panic(expected = "Amount must be positive")]
-fn test_inv_06a_burn_zero_rejected() {
+fn test_inv_06a_burn_zero_is_noop() {
     let (_, client, admin) = setup();
+    let before = client.balance(&admin);
+    let supply_before = client.total_supply();
     client.burn(&admin, &0);
+    assert_eq!(client.balance(&admin), before);
+    assert_eq!(client.total_supply(), supply_before);
 }
 
 /// INV-06: burning a negative amount is rejected.
 #[test]
-#[should_panic(expected = "Amount must be positive")]
+#[should_panic(expected = "Amount cannot be negative")]
 fn test_inv_06b_burn_negative_rejected() {
     let (_, client, admin) = setup();
     client.burn(&admin, &-1);

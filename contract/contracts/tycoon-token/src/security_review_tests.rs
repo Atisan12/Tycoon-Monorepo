@@ -213,7 +213,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "Already initialized")]
     fn test_sec_10_double_initialize_rejected() {
-        let (e, client, admin) = setup();
+        let (_e, client, admin) = setup();
         client.initialize(&admin, &INITIAL_SUPPLY);
     }
 
@@ -230,7 +230,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "legacy_burn is deprecated")]
     fn test_sec_11b_legacy_burn_panics() {
-        let (e, client, admin) = setup();
+        let (_e, client, admin) = setup();
         client.legacy_burn(&admin, &1);
     }
 

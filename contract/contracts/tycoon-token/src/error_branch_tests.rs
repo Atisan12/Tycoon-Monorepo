@@ -291,14 +291,14 @@ fn test_snapshot_state_after_operations() {
 #[test]
 #[should_panic(expected = "Amount cannot be negative")]
 fn test_burn_negative_amount() {
-    let (e, client, admin) = setup();
+    let (_e, client, admin) = setup();
     client.burn(&admin, &-1);
 }
 
 /// `burn` of zero is a no-op: balance and supply must not change.
 #[test]
 fn test_burn_zero_is_noop() {
-    let (e, client, admin) = setup();
+    let (_e, client, admin) = setup();
     let before_balance = client.balance(&admin);
     let before_supply = client.total_supply();
 
@@ -320,7 +320,7 @@ fn test_burn_zero_is_noop() {
 #[test]
 #[should_panic(expected = "Amount cannot be negative")]
 fn test_mint_negative_amount() {
-    let (e, client, admin) = setup();
+    let (e, client, _admin) = setup();
     let user = Address::generate(&e);
     client.mint(&user, &-1);
 }
@@ -328,7 +328,7 @@ fn test_mint_negative_amount() {
 /// `mint` of zero is a no-op: balance and supply must not change.
 #[test]
 fn test_mint_zero_is_noop() {
-    let (e, client, admin) = setup();
+    let (e, client, _admin) = setup();
     let user = Address::generate(&e);
     let before_balance = client.balance(&user);
     let before_supply = client.total_supply();
@@ -392,7 +392,7 @@ fn test_burn_from_zero_is_noop() {
 /// Transfer to self should work correctly (no-op in effect but valid).
 #[test]
 fn test_transfer_to_self() {
-    let (e, client, admin) = setup();
+    let (_e, client, admin) = setup();
     let before_balance = client.balance(&admin);
     let before_supply = client.total_supply();
 
@@ -433,7 +433,7 @@ fn test_approve_idempotent() {
 /// SNAPSHOT: multi-user with approve, transfer_from, burn_from
 #[test]
 fn test_snapshot_complex_multi_user_scenario() {
-    let (e, client, admin) = setup();
+    let (e, client, _admin) = setup();
     let user_a = Address::generate(&e);
     let user_b = Address::generate(&e);
     let spender = Address::generate(&e);
@@ -481,7 +481,7 @@ fn test_snapshot_complex_multi_user_scenario() {
 /// Metadata queries should be consistent across multiple calls.
 #[test]
 fn test_metadata_consistency() {
-    let (e, client, _) = setup();
+    let (_e, client, _) = setup();
 
     let name1 = client.name();
     let symbol1 = client.symbol();

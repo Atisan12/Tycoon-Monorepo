@@ -35,7 +35,7 @@ mod inner {
     use soroban_sdk::{
         testutils::Address as _,
         token::{Client as TokenClient, StellarAssetClient},
-        Address, Env,
+        Address, Env, Vec,
     };
     use tycoon_boost_system::{TycoonBoostSystem, TycoonBoostSystemClient};
     use tycoon_game::TycoonContractClient;
@@ -82,6 +82,7 @@ mod inner {
         pub boost_system: TycoonBoostSystemClient<'a>,
     }
 
+    #[allow(dead_code)]
     impl Fixture<'_> {
         pub fn new() -> Self {
             let env = Env::default();
