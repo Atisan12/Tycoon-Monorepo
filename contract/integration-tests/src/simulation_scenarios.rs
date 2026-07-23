@@ -461,7 +461,11 @@ mod tests {
             f.reward.redeem_voucher_from(&f.player_a, &tid);
         }));
         assert!(res.is_err(), "redeem while paused must be rejected");
-        assert_eq!(f.tyc_balance(&f.player_a), 0, "no TYC must move while paused");
+        assert_eq!(
+            f.tyc_balance(&f.player_a),
+            0,
+            "no TYC must move while paused"
+        );
     }
 
     #[test]

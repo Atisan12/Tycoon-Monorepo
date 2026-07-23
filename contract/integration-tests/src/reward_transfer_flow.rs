@@ -113,7 +113,10 @@ mod tests {
         let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             f.reward.redeem_voucher_from(&f.player_a, &tid);
         }));
-        assert!(res.is_err(), "original owner must not redeem after transfer");
+        assert!(
+            res.is_err(),
+            "original owner must not redeem after transfer"
+        );
     }
 
     /// Voucher transferred back to original owner; original owner redeems.

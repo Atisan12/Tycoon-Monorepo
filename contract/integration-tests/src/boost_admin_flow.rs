@@ -362,18 +362,12 @@ mod tests {
     fn admin_grant_multiple_priorities_highest_wins() {
         let f = Fixture::new();
 
-        f.boost_system.admin_grant_boost(
-            &f.player_a,
-            &nb(1, BoostType::Override, 20000, 5),
-        );
-        f.boost_system.admin_grant_boost(
-            &f.player_a,
-            &nb(2, BoostType::Override, 30000, 10),
-        );
-        f.boost_system.admin_grant_boost(
-            &f.player_a,
-            &nb(3, BoostType::Override, 15000, 3),
-        );
+        f.boost_system
+            .admin_grant_boost(&f.player_a, &nb(1, BoostType::Override, 20000, 5));
+        f.boost_system
+            .admin_grant_boost(&f.player_a, &nb(2, BoostType::Override, 30000, 10));
+        f.boost_system
+            .admin_grant_boost(&f.player_a, &nb(3, BoostType::Override, 15000, 3));
 
         // Highest priority (10) wins: 30000
         assert_eq!(f.boost_system.calculate_total_boost(&f.player_a), 30000);
@@ -401,15 +395,11 @@ mod tests {
         let f = Fixture::new();
 
         // 1.5x
-        f.boost_system.admin_grant_boost(
-            &f.player_c,
-            &nb(1, BoostType::Multiplicative, 15000, 0),
-        );
+        f.boost_system
+            .admin_grant_boost(&f.player_c, &nb(1, BoostType::Multiplicative, 15000, 0));
         // 2x
-        f.boost_system.admin_grant_boost(
-            &f.player_c,
-            &nb(2, BoostType::Multiplicative, 20000, 0),
-        );
+        f.boost_system
+            .admin_grant_boost(&f.player_c, &nb(2, BoostType::Multiplicative, 20000, 0));
 
         // 10000 * 1.5 * 2.0 = 30000
         assert_eq!(f.boost_system.calculate_total_boost(&f.player_c), 30000);
@@ -421,13 +411,13 @@ mod tests {
     #[test]
     fn admin_grant_boost_expires_at_current_ledger() {
         let f = Fixture::new();
+        // Grant while ledger is 99 with expiry at 100; becomes inactive once ledger reaches 100.
+        set_ledger(&f.env, 99);
+
+        f.boost_system
+            .admin_grant_boost(&f.player_a, &eb(1, BoostType::Additive, 5000, 0, 100));
+
         set_ledger(&f.env, 100);
-
-        f.boost_system.admin_grant_boost(
-            &f.player_a,
-            &eb(1, BoostType::Additive, 5000, 0, 100),
-        );
-
         // At ledger 100, boost should be expired
         assert_eq!(f.boost_system.calculate_total_boost(&f.player_a), 10000);
     }
@@ -438,10 +428,8 @@ mod tests {
         let f = Fixture::new();
         set_ledger(&f.env, 100);
 
-        f.boost_system.admin_grant_boost(
-            &f.player_b,
-            &eb(1, BoostType::Additive, 3000, 0, 101),
-        );
+        f.boost_system
+            .admin_grant_boost(&f.player_b, &eb(1, BoostType::Additive, 3000, 0, 101));
 
         // At ledger 100, boost should be active
         assert_eq!(f.boost_system.calculate_total_boost(&f.player_b), 13000);
@@ -461,15 +449,11 @@ mod tests {
         f.boost_system
             .admin_grant_boost(&f.player_a, &nb(1, BoostType::Additive, 1000, 0));
         // Expires at 150
-        f.boost_system.admin_grant_boost(
-            &f.player_a,
-            &eb(2, BoostType::Additive, 2000, 0, 150),
-        );
+        f.boost_system
+            .admin_grant_boost(&f.player_a, &eb(2, BoostType::Additive, 2000, 0, 150));
         // Expires at 120
-        f.boost_system.admin_grant_boost(
-            &f.player_a,
-            &eb(3, BoostType::Additive, 1500, 0, 120),
-        );
+        f.boost_system
+            .admin_grant_boost(&f.player_a, &eb(3, BoostType::Additive, 1500, 0, 120));
 
         // At ledger 100: all active = 10000 * (1 + 0.10 + 0.20 + 0.15) = 14500
         assert_eq!(f.boost_system.calculate_total_boost(&f.player_a), 14500);
@@ -538,10 +522,8 @@ mod tests {
         let f = Fixture::new();
 
         // Admin grants 3x boost
-        f.boost_system.admin_grant_boost(
-            &f.player_a,
-            &nb(1, BoostType::Multiplicative, 30000, 0),
-        );
+        f.boost_system
+            .admin_grant_boost(&f.player_a, &nb(1, BoostType::Multiplicative, 30000, 0));
 
         // First redemption with boost
         let base_reward: u128 = 100_000_000_000_000_000_000;
@@ -563,10 +545,7 @@ mod tests {
         f.reward.redeem_voucher_from(&f.player_a, &tid2);
 
         // Total balance = boosted1 + boosted2
-        assert_eq!(
-            f.tyc_balance(&f.player_a),
-            (boosted1 + boosted2) as i128
-        );
+        assert_eq!(f.tyc_balance(&f.player_a), (boosted1 + boosted2) as i128);
     }
 
     /// Admin grants boost to multiple players; each redeems independently.

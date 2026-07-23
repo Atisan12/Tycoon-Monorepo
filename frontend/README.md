@@ -32,6 +32,7 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 
 - `/join-room` accepts a strict 6-character alphanumeric room code and preserves the last valid join code in browser session storage.
 - `/game-waiting` validates the incoming `gameCode` query string and gracefully shows retry navigation when the code is missing or invalid.
+- `/offline` renders the PWA offline shell with live browser connectivity detection, persists the last known connection status, and avoids caching live game state to prevent stale session conflicts.
 
 ## Learn More
 

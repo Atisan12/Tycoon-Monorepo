@@ -479,10 +479,7 @@ mod tests {
         let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             client.set_collectible_info(&token_id, &1u32, &1u32, &100u128, &50u128, &5u64);
         }));
-        assert!(
-            res.is_err(),
-            "non-owner must not set collectible info"
-        );
+        assert!(res.is_err(), "non-owner must not set collectible info");
     }
 
     /// Redeeming a voucher for a stale/non-existent token_id must panic gracefully.
@@ -499,6 +496,10 @@ mod tests {
             res.is_err(),
             "redeem_voucher_from on non-existent token_id must panic"
         );
-        assert_eq!(f.tyc_balance(&f.player_a), 0, "no TYC must move for stale voucher");
+        assert_eq!(
+            f.tyc_balance(&f.player_a),
+            0,
+            "no TYC must move for stale voucher"
+        );
     }
 }

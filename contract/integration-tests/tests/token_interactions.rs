@@ -635,7 +635,10 @@ fn test_transfer_from_panics_on_expired_allowance() {
     let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         client.transfer_from(&spender, &admin, &dest, &100_000);
     }));
-    assert!(res.is_err(), "transfer_from on expired allowance must panic");
+    assert!(
+        res.is_err(),
+        "transfer_from on expired allowance must panic"
+    );
 }
 
 /// AC2.6: burn_from panics when allowance is expired

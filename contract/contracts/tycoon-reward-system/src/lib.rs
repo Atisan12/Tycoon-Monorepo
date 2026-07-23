@@ -156,6 +156,14 @@ impl TycoonRewardSystem {
             panic!("Unauthorized: only admin or backend minter can mint");
         }
 
+        if e.storage()
+            .persistent()
+            .get::<DataKey, bool>(&DataKey::Paused)
+            .unwrap_or(false)
+        {
+            panic!("Contract is paused");
+        }
+
         // Read-increment-write in one block; no intermediate clone needed
         let token_id: u128 = e
             .storage()
@@ -417,3 +425,5 @@ mod simulation_scenarios;
 
 #[cfg(test)]
 mod gas_snapshot_tests;
+mod security_checklist;
+mod integration_coverage;

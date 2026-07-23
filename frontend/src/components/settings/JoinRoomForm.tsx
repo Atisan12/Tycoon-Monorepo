@@ -200,7 +200,9 @@ export default function JoinRoomForm({
         const connErrorType = isConnectionError(err);
         if (connErrorType) {
           setConnectionError(connErrorType);
-          trackJoinFailed(connErrorType);
+          trackJoinFailed(
+            connErrorType === "network_error" ? "network" : connErrorType,
+          );
         }
 
         setErrors(mapJoinRoomErrors(err));

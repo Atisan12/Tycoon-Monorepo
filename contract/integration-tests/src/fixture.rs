@@ -60,6 +60,7 @@ mod inner {
         }
     }
 
+    #[allow(dead_code)]
     pub struct Fixture<'a> {
         pub env: Env,
         // Accounts
@@ -180,6 +181,7 @@ mod inner {
         }
 
         /// Get the current ledger sequence number.
+        #[allow(dead_code)]
         pub fn current_ledger(&self) -> u32 {
             self.env.ledger().sequence()
         }

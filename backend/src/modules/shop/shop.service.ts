@@ -276,6 +276,44 @@ export class ShopService {
   }
 
   /**
+   * Bulk update multiple shop items
+   * Supports updating price and/or active status for multiple items in a single operation
+   */
+  async bulkUpdate(
+    updates: Array<{ id: number; price?: number; active?: boolean }>,
+  ): Promise<ShopItem[]> {
+    const updatedItems: ShopItem[] = [];
+
+    for (const update of updates) {
+      try {
+        const item = await this.findOne(update.id);
+
+        if (update.price !== undefined) {
+          item.price = String(update.price);
+        }
+
+        if (update.active !== undefined) {
+          item.active = update.active;
+        }
+
+        const saved = await this.shopItemRepository.save(item);
+        updatedItems.push(saved);
+        this.logger.log(
+          `Bulk updated shop item ${update.id}: ${JSON.stringify(update)}`,
+        );
+        await this.invalidateCache(update.id);
+      } catch (error) {
+        this.logger.error(
+          `Failed to bulk update item ${update.id}: ${error.message}`,
+        );
+        // Continue with other items instead of throwing
+      }
+    }
+
+    return updatedItems;
+  }
+
+  /**
    * Invalidate shop caches
    */
   private async invalidateCache(id?: number): Promise<void> {

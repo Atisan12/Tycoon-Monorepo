@@ -289,67 +289,41 @@ fn test_snapshot_state_after_operations() {
 
 /// `burn` with negative amount must be rejected.
 #[test]
-#[should_panic(expected = "Amount cannot be negative")]
+#[should_panic(expected = "Amount must be positive")]
 fn test_burn_negative_amount() {
     let (_e, client, admin) = setup();
     client.burn(&admin, &-1);
 }
 
-/// `burn` of zero is a no-op: balance and supply must not change.
+/// `burn` of zero is rejected.
 #[test]
+#[should_panic(expected = "Amount must be positive")]
 fn test_burn_zero_is_noop() {
     let (_e, client, admin) = setup();
-    let before_balance = client.balance(&admin);
-    let before_supply = client.total_supply();
-
     client.burn(&admin, &0);
-
-    assert_eq!(
-        client.balance(&admin),
-        before_balance,
-        "balance changed on zero burn"
-    );
-    assert_eq!(
-        client.total_supply(),
-        before_supply,
-        "supply changed on zero burn"
-    );
 }
 
 /// `mint` with negative amount must be rejected.
 #[test]
-#[should_panic(expected = "Amount cannot be negative")]
+#[should_panic(expected = "Amount must be positive")]
 fn test_mint_negative_amount() {
     let (e, client, _admin) = setup();
     let user = Address::generate(&e);
     client.mint(&user, &-1);
 }
 
-/// `mint` of zero is a no-op: balance and supply must not change.
+/// `mint` of zero is rejected.
 #[test]
+#[should_panic(expected = "Amount must be positive")]
 fn test_mint_zero_is_noop() {
     let (e, client, _admin) = setup();
     let user = Address::generate(&e);
-    let before_balance = client.balance(&user);
-    let before_supply = client.total_supply();
-
     client.mint(&user, &0);
-
-    assert_eq!(
-        client.balance(&user),
-        before_balance,
-        "balance changed on zero mint"
-    );
-    assert_eq!(
-        client.total_supply(),
-        before_supply,
-        "supply changed on zero mint"
-    );
 }
 
 /// `burn_from` with negative amount must be rejected.
 #[test]
-#[should_panic(expected = "Amount cannot be negative")]
+#[should_panic(expected = "Amount must be positive")]
 fn test_burn_from_negative_amount() {
     let (e, client, admin) = setup();
     let spender = Address::generate(&e);
@@ -358,35 +332,15 @@ fn test_burn_from_negative_amount() {
     client.burn_from(&spender, &admin, &-1);
 }
 
-/// `burn_from` of zero is a no-op: balance, supply, and allowance must not change.
+/// `burn_from` of zero is rejected.
 #[test]
+#[should_panic(expected = "Amount must be positive")]
 fn test_burn_from_zero_is_noop() {
     let (e, client, admin) = setup();
     let spender = Address::generate(&e);
     let allowance: i128 = 1_000_000_000_000_000_000;
     client.approve(&admin, &spender, &allowance, &0);
-
-    let before_balance = client.balance(&admin);
-    let before_supply = client.total_supply();
-    let before_allowance = client.allowance(&admin, &spender);
-
     client.burn_from(&spender, &admin, &0);
-
-    assert_eq!(
-        client.balance(&admin),
-        before_balance,
-        "balance changed on zero burn_from"
-    );
-    assert_eq!(
-        client.total_supply(),
-        before_supply,
-        "supply changed on zero burn_from"
-    );
-    assert_eq!(
-        client.allowance(&admin, &spender),
-        before_allowance,
-        "allowance changed on zero burn_from"
-    );
 }
 
 /// Transfer to self should work correctly (no-op in effect but valid).

@@ -201,10 +201,22 @@ mod tests {
     fn collectible_info_overwrite() {
         let f = Fixture::new();
         let token_id: u128 = 99;
-        f.game
-            .set_collectible_info(&token_id, &1, &1, &100_000_000_000_000_000_000, &1_000_000, &10);
-        f.game
-            .set_collectible_info(&token_id, &5, &2, &999_000_000_000_000_000_000, &9_000_000, &50);
+        f.game.set_collectible_info(
+            &token_id,
+            &1,
+            &1,
+            &100_000_000_000_000_000_000,
+            &1_000_000,
+            &10,
+        );
+        f.game.set_collectible_info(
+            &token_id,
+            &5,
+            &2,
+            &999_000_000_000_000_000_000,
+            &9_000_000,
+            &50,
+        );
         let info = f.game.get_collectible_info(&token_id);
         assert_eq!(info, (5, 2, 999_000_000_000_000_000_000, 9_000_000, 50));
     }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type React from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import { kronaOne, orbitron, dmSans } from "@/lib/fonts";
 import { AnalyticsProvider } from "@/components/providers/analytics-provider";
@@ -35,7 +36,7 @@ export default function RootLayout({
   children,
 }: Readonly<{
   children?: React.ReactNode | null;
-}>): JSX.Element {
+}>): React.JSX.Element {
   const content = children ?? null;
 
   return (

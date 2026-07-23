@@ -1,4 +1,5 @@
 import {
+  IsArray,
   IsBoolean,
   IsEnum,
   IsNotEmpty,
@@ -81,4 +82,13 @@ export class CreateShopItemDto {
   })
   @IsBoolean()
   active?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Image URLs for the shop item',
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  images?: string[];
 }

@@ -14,7 +14,8 @@ use soroban_sdk::{
 };
 
 fn create_token_contract(env: &Env, admin: &Address) -> Address {
-    env.register_stellar_asset_contract_v2(admin.clone()).address()
+    env.register_stellar_asset_contract_v2(admin.clone())
+        .address()
 }
 
 fn mint_tokens(env: &Env, token: &Address, to: &Address, amount: i128) {
@@ -41,7 +42,10 @@ fn test_token_admin_can_mint() {
     let recipient = Address::generate(&env);
     let token = create_token_contract(&env, &admin);
     StellarAssetClient::new(&env, &token).mint(&recipient, &1_000_000);
-    assert_eq!(TokenClient::new(&env, &token).balance(&recipient), 1_000_000);
+    assert_eq!(
+        TokenClient::new(&env, &token).balance(&recipient),
+        1_000_000
+    );
 }
 
 // ── AC1.2 ─────────────────────────────────────────────────────────────────────
@@ -56,8 +60,14 @@ fn test_game_contract_can_reference_tokens() {
     assert_ne!(tyc_token, usdc_token);
     StellarAssetClient::new(&env, &tyc_token).mint(&admin, &1_000_000);
     StellarAssetClient::new(&env, &usdc_token).mint(&admin, &1_000_000);
-    assert_eq!(TokenClient::new(&env, &tyc_token).balance(&admin), 1_000_000);
-    assert_eq!(TokenClient::new(&env, &usdc_token).balance(&admin), 1_000_000);
+    assert_eq!(
+        TokenClient::new(&env, &tyc_token).balance(&admin),
+        1_000_000
+    );
+    assert_eq!(
+        TokenClient::new(&env, &usdc_token).balance(&admin),
+        1_000_000
+    );
 }
 
 #[test]
@@ -133,7 +143,10 @@ fn test_contract_reference_consistency() {
     let tyc_token_2 = create_token_contract(&env, &admin);
     assert_ne!(tyc_token_1, tyc_token_2);
     StellarAssetClient::new(&env, &tyc_token_1).mint(&admin, &1_000_000);
-    assert_eq!(TokenClient::new(&env, &tyc_token_1).balance(&admin), 1_000_000);
+    assert_eq!(
+        TokenClient::new(&env, &tyc_token_1).balance(&admin),
+        1_000_000
+    );
 }
 
 // ── AC2.1: TYC and USDC balances are isolated per contract ───────────────────
