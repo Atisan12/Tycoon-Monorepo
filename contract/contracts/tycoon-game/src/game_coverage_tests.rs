@@ -456,3 +456,8 @@ mod tests {
         client.admin_withdraw_funds(&tyc_id, &recipient, &500);
     }
 }
+
+// Naming convention: intentionally-unused bindings in helper/test signatures
+// (e.g. destructured tuple elements not needed by a given scenario) are
+// prefixed with `_` (or bound to `_`) rather than left unused, so `clippy
+// --workspace --all-targets -- -D warnings` (`make clippy-deny`) stays clean.
