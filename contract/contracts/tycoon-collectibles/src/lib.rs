@@ -38,6 +38,14 @@ fn u128_to_soroban_string(env: &Env, mut n: u128) -> soroban_sdk::String {
 #[contract]
 pub struct TycoonCollectibles;
 
+/// Panic with ContractPaused if the contract is currently paused.
+fn require_not_paused(env: &Env) -> Result<(), CollectibleError> {
+    if is_paused(env) {
+        return Err(CollectibleError::ContractPaused);
+    }
+    Ok(())
+}
+
 #[contractimpl]
 impl TycoonCollectibles {
     // ── Admin-only entrypoints ────────────────────────────────────────────────
@@ -117,6 +125,7 @@ impl TycoonCollectibles {
     ) -> Result<u128, CollectibleError> {
         let admin = get_admin(&env);
         admin.require_auth();
+        require_not_paused(&env)?;
 
         // Validate inputs
         if amount == 0 {
@@ -188,6 +197,7 @@ impl TycoonCollectibles {
     ) -> Result<(), CollectibleError> {
         let admin = get_admin(&env);
         admin.require_auth();
+        require_not_paused(&env)?;
 
         if additional_amount == 0 {
             return Err(CollectibleError::InvalidAmount);
@@ -277,6 +287,7 @@ impl TycoonCollectibles {
         use_usdc: bool,
     ) -> Result<(), CollectibleError> {
         buyer.require_auth();
+        require_not_paused(&env)?;
 
         // CEI: CHECKS — read and validate all state first
         let shop_config = get_shop_config(&env).ok_or(CollectibleError::ShopNotInitialized)?;
@@ -365,6 +376,7 @@ impl TycoonCollectibles {
     ) -> Result<(), CollectibleError> {
         let admin = get_admin(&env);
         admin.require_auth();
+        require_not_paused(&env)?;
         _safe_mint(&env, &buyer, token_id, amount)
     }
 
@@ -376,6 +388,7 @@ impl TycoonCollectibles {
         amount: u64,
     ) -> Result<(), CollectibleError> {
         from.require_auth();
+        require_not_paused(&env)?;
         _safe_transfer(&env, &from, &to, token_id, amount)
     }
 
@@ -386,6 +399,7 @@ impl TycoonCollectibles {
         amount: u64,
     ) -> Result<(), CollectibleError> {
         owner.require_auth();
+        require_not_paused(&env)?;
         _safe_burn(&env, &owner, token_id, amount)
     }
 
@@ -562,6 +576,7 @@ impl TycoonCollectibles {
         amount: u64,
     ) -> Result<(), CollectibleError> {
         caller.require_auth();
+        require_not_paused(&env)?;
 
         let admin = get_admin(&env);
         let minter = get_minter(&env);
@@ -587,6 +602,7 @@ impl TycoonCollectibles {
         strength: u32,
     ) -> Result<u128, CollectibleError> {
         caller.require_auth();
+        require_not_paused(&env)?;
 
         // Authorization check - must be admin or backend minter
         let admin = get_admin(&env);
@@ -816,5 +832,7 @@ mod events_tests;
 mod lib_tests;
 #[cfg(test)]
 mod issues_1053_1056_tests;
+#[cfg(test)]
+mod pause_tests;
 #[cfg(test)]
 mod test;
