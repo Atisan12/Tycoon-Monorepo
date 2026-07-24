@@ -574,6 +574,8 @@ mod deprecation_tests;
 #[cfg(test)]
 mod integration_coverage;
 #[cfg(test)]
+mod issues_1331_tests;
+#[cfg(test)]
 mod security_review_tests;
 #[cfg(test)]
 mod simulation_scenarios;

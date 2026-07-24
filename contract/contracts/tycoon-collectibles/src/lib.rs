@@ -810,4 +810,8 @@ mod events_tests;
 mod lib_tests;
 mod issues_1053_1056_tests;
 #[cfg(test)]
+mod issues_1328_tests;
+#[cfg(test)]
+mod issues_1329_tests;
+#[cfg(test)]
 mod test;
