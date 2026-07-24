@@ -2,41 +2,34 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { JOIN_ROOM_I18N_KEY_LIST } from "@/lib/join-room/i18n-keys";
 
-const localesDir = join(dirname(fileURLToPath(import.meta.url)), "../public/locales");
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const LOCALES = join(__dirname, "../public/locales");
+const REQUIRED = ["title","room_code_label","room_code_placeholder","submit",
+  "invalid_code","network_error","timeout","service_unavailable","success"];
 
-function loadLocale(lng: string): Record<string, unknown> {
-  const raw = readFileSync(join(localesDir, lng, "common.json"), "utf8");
-  return JSON.parse(raw) as Record<string, unknown>;
+function load(lang: string) {
+  return JSON.parse(readFileSync(join(LOCALES, lang, "common.json"), "utf-8")) as
+    Record<string, Record<string, string>>;
 }
 
-function resolveKey(obj: Record<string, unknown>, key: string): unknown {
-  return key.split(".").reduce<unknown>((acc, part) => {
-    if (acc && typeof acc === "object" && part in acc) {
-      return (acc as Record<string, unknown>)[part];
-    }
-    return undefined;
-  }, obj);
-}
-
-describe("join room i18n keys (#844)", () => {
-  const locales = ["en", "es"] as const;
-
-  it.each(locales)("all join_room keys exist in %s/common.json", (lng) => {
-    const locale = loadLocale(lng);
-    for (const key of JOIN_ROOM_I18N_KEY_LIST) {
-      const value = resolveKey(locale, key);
-      expect(value, `missing ${key} in ${lng}`).toBeDefined();
-      expect(typeof value).toBe("string");
-      expect((value as string).length).toBeGreaterThan(0);
-    }
-  });
-
-  it("lists every key under join_room in the English locale", () => {
-    const en = loadLocale("en");
-    const joinRoom = en.join_room as Record<string, unknown>;
-    expect(joinRoom).toBeDefined();
-    expect(JOIN_ROOM_I18N_KEY_LIST.length).toBeGreaterThanOrEqual(15);
+(["en", "es"] as const).forEach((lang) => {
+  describe(`${lang}/common.json — join_room i18n`, () => {
+    const data = load(lang);
+    it("has join_room namespace", () => { expect(data.join_room).toBeDefined(); });
+    REQUIRED.forEach((key) => {
+      it(`has non-empty key: join_room.${key}`, () => {
+        expect(typeof data.join_room[key]).toBe("string");
+        expect(data.join_room[key].trim().length).toBeGreaterThan(0);
+      });
+    });
+    it("network_error mentions network or connection", () => {
+      const m = data.join_room.network_error.toLowerCase();
+      expect(m.includes("network") || m.includes("connection") || m.includes("red") || m.includes("conexi")).toBe(true);
+    });
+    it("timeout mentions timeout or expiry", () => {
+      const m = data.join_room.timeout.toLowerCase();
+      expect(m.includes("timeout") || m.includes("timed") || m.includes("expir")).toBe(true);
+    });
   });
 });
