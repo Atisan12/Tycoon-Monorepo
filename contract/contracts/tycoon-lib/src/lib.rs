@@ -44,7 +44,6 @@ pub mod legacy;
 // Pause module removed - each contract implements pause locally for better isolation
 // See tycoon-main-game/src/storage.rs for pause implementation example
 pub mod events;
-pub mod fees;
 
 // Admin-only vs public entrypoint formalization (SW-LIB-001)
 pub mod admin;

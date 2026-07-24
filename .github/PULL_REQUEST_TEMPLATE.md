@@ -20,3 +20,4 @@ $ <ci command>
 - [ ] Tests added or updated for changed behaviour
 - [ ] No regressions in related flows
 - [ ] Documentation updated where APIs changed
+- [ ] Security check: Soroban smart contract changes comply with the [Workspace Security Review Checklist](contract/SECURITY_REVIEW_CHECKLIST.md)

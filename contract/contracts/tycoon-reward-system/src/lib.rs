@@ -396,7 +396,7 @@ impl TycoonRewardSystem {
     }
 }
 
-#[cfg(any(test, feature = "testutils"))]
+#[cfg(test)]
 #[contractimpl]
 impl TycoonRewardSystem {
     #[deprecated(note = "Test function - will be removed in future version")]

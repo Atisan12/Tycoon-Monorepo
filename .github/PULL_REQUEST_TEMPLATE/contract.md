@@ -29,3 +29,4 @@ make ci: OK (hygiene + build + wasm-check + test)
 - [ ] `docs/NEP_STANDARDS_CHECKLIST.md` updated if token interface changed
 - [ ] No regressions in related flows
 - [ ] PR title follows `feat|fix|chore|docs(scope): summary [#issue]`
+- [ ] Changes comply with the [Workspace Security Review Checklist](../contract/SECURITY_REVIEW_CHECKLIST.md) (SW-CONTRACT-HYGIENE-001)

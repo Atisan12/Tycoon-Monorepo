@@ -189,6 +189,41 @@ A new developer can deploy a contract to testnet by following these steps:
 - [ ] Deploy your own instance: `./scripts/deploy.sh --network testnet --contract tycoon-game --skip-hash`
 - [ ] Verify deployment: `./scripts/verify-deploy.sh --network testnet`
 - [ ] Read the [Deployment Runbook](../contract/DEPLOYMENT_RUNBOOK.md) before touching the shared staging contract
+- [ ] Read Section 8 below on extending contract TTLs
+
+---
+
+## 8. Extending and Bumping Contract TTL (Time-To-Live)
+
+Soroban ledger entries (both contract WASM codes and instance/persistent data entries) have a Time-To-Live (TTL) after which they expire. If they expire, they must be restored before they can be used.
+
+### In CI (GitHub Actions)
+
+In the CI workflow, contract TTLs are automatically bumped as part of the deployment and validation steps. Specifically, the build pipeline runs:
+```bash
+# Extend the WASM code and instance entry TTL
+stellar contract extend --id <YOUR_CONTRACT_ID> --ledgers-to-extend 5356800 --network testnet
+```
+This bumps the TTL to the maximum allowed limit for persistent entries on the testnet (typically around ~3 months, or 5,356,800 ledgers at 5 seconds per ledger).
+
+### Manually via the Stellar CLI
+
+To manually check and extend the TTL of your deployed contract:
+
+1. **Check current TTL / Ledger footprint**:
+   Check when your contract is scheduled to expire by inspecting its ledger entry:
+   ```bash
+   stellar contract inspect --id <YOUR_CONTRACT_ID> --network testnet
+   ```
+
+2. **Extend Contract WASM Code TTL**:
+   ```bash
+   stellar contract extend \
+     --id <YOUR_CONTRACT_ID> \
+     --ledgers-to-extend 500000 \
+     --network testnet \
+     --source dev-<alias>
+   ```
 
 ---
 
