@@ -396,7 +396,7 @@ impl TycoonRewardSystem {
     }
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "testutils"))]
 #[contractimpl]
 impl TycoonRewardSystem {
     #[deprecated(note = "Test function - will be removed in future version")]
@@ -424,5 +424,6 @@ mod transfer_tests;
 mod simulation_scenarios;
 
 #[cfg(test)]
+mod gas_snapshot_tests;
 mod security_checklist;
 mod integration_coverage;

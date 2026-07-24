@@ -14,6 +14,11 @@ jobs:
     defaults:
       run:
         working-directory: contract
+    env:
+      # Explicitly unset — integration tests must use Env::default() only.
+      # Any test that reads STELLAR_NETWORK to connect to staging will fail
+      # fast here rather than mutating shared contract state. (#1359)
+      STELLAR_NETWORK: ""
 
     steps:
       - name: Checkout repository
