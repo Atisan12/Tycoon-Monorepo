@@ -28,6 +28,17 @@ vi.mock("@/lib/api/client", () => ({
   apiClient: { post: (...args: unknown[]) => mockPost(...args) },
 }));
 
+// ─── Mock telemetry to assert error_type mapping (#1254) ───────────────────
+const mockTrackJoinFailed = vi.fn();
+vi.mock("@/hooks/useJoinRoomTelemetry", () => ({
+  useJoinRoomTelemetry: () => ({
+    trackFormViewed: vi.fn(),
+    trackJoinAttempted: vi.fn(),
+    trackJoinSucceeded: vi.fn(),
+    trackJoinFailed: mockTrackJoinFailed,
+  }),
+}));
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function seedAuthToken(): void {
   localStorage.setItem("access_token", "test-token");
@@ -58,6 +69,7 @@ function getErrorBanner(): HTMLElement | null {
 beforeEach(() => {
   mockPush.mockClear();
   mockPost.mockClear();
+  mockTrackJoinFailed.mockClear();
   mockPost.mockResolvedValue({ id: 1, code: "TYC001" });
   seedAuthToken();
   vi.clearAllTimers();
@@ -377,6 +389,72 @@ describe("JoinRoomForm — Keyboard Navigation (SW-FE-TYC-001)", () => {
 
     await waitFor(() => {
       expect(mockPost).toHaveBeenCalledWith("/games/TYC001/join", {});
+    });
+  });
+});
+
+// ─── Test Suite: Telemetry error_type Mapping (#1254) ─────────────────────────
+
+describe("JoinRoomForm — telemetry error_type mapping (#1254)", () => {
+  it("maps a network error to error_type 'network', not 'network_error'", async () => {
+    mockPost.mockRejectedValueOnce(new Error("Failed to fetch"));
+
+    renderForm();
+    fireEvent.change(getInput(), { target: { value: "TYC001" } });
+    fireEvent.click(getButton());
+
+    await waitFor(() => {
+      expect(mockTrackJoinFailed).toHaveBeenCalledWith("network");
+    });
+    expect(mockTrackJoinFailed).not.toHaveBeenCalledWith("network_error");
+  });
+
+  it("reports error_type 'timeout' on request timeout", async () => {
+    mockPost.mockRejectedValueOnce(new Error("Request timeout"));
+
+    renderForm();
+    fireEvent.change(getInput(), { target: { value: "TYC001" } });
+    fireEvent.click(getButton());
+
+    await waitFor(() => {
+      expect(mockTrackJoinFailed).toHaveBeenCalledWith("timeout");
+    });
+  });
+
+  it("reports error_type 'unauthorized' when the join auth token is missing", async () => {
+    clearAuthToken();
+
+    renderForm();
+    fireEvent.change(getInput(), { target: { value: "TYC001" } });
+    fireEvent.click(getButton());
+
+    await waitFor(() => {
+      expect(mockTrackJoinFailed).toHaveBeenCalledWith("unauthorized");
+    });
+    expect(mockPost).not.toHaveBeenCalled();
+  });
+
+  it("reports error_type 'rate_limit' when submitting within the cooldown window", async () => {
+    renderForm();
+    fireEvent.change(getInput(), { target: { value: "TYC001" } });
+
+    fireEvent.click(getButton());
+    fireEvent.click(getButton());
+
+    await waitFor(() => {
+      expect(mockTrackJoinFailed).toHaveBeenCalledWith("rate_limit");
+    });
+  });
+
+  it("reports error_type 'api_error' for non-connection API failures", async () => {
+    mockPost.mockRejectedValueOnce(new Error("Room not found"));
+
+    renderForm();
+    fireEvent.change(getInput(), { target: { value: "TYC001" } });
+    fireEvent.click(getButton());
+
+    await waitFor(() => {
+      expect(mockTrackJoinFailed).toHaveBeenCalledWith("api_error");
     });
   });
 });
