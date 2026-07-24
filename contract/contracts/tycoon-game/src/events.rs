@@ -40,6 +40,13 @@ pub fn emit_ownership_transferred(env: &Env, old_owner: &Address, new_owner: &Ad
     env.events().publish(topics, ());
 }
 
+/// Emit a VoucherMinted event
+pub fn emit_voucher_minted(env: &Env, player: &Address) {
+    let topics = (Symbol::new(env, "VoucherMinted"), player);
+    #[allow(deprecated)]
+    env.events().publish(topics, ());
+}
+
 /// # Events Unit Tests
 ///
 /// Verifies that each emit helper publishes exactly one event and that the
@@ -58,20 +65,47 @@ mod tests {
 
     use super::*;
     use soroban_sdk::{
+        contract, contractimpl,
         testutils::{Address as _, Events},
         Address, Env,
     };
 
+    #[contract]
+    pub struct EventTestContract;
+
+    #[contractimpl]
+    impl EventTestContract {
+        pub fn emit_funds(env: Env, token: Address, to: Address, amount: u128) {
+            emit_funds_withdrawn(&env, &token, &to, amount);
+        }
+        pub fn emit_removed(env: Env, game_id: u128, player: Address, turn_count: u32) {
+            emit_player_removed_from_game(&env, game_id, &player, turn_count);
+        }
+        pub fn emit_controller(env: Env, new_controller: Address) {
+            emit_controller_updated(&env, &new_controller);
+        }
+        pub fn emit_registered(env: Env, player: Address) {
+            emit_player_registered(&env, &player);
+        }
+        pub fn emit_ownership(env: Env, old_owner: Address, new_owner: Address) {
+            emit_ownership_transferred(&env, &old_owner, &new_owner);
+        }
+        pub fn emit_voucher(env: Env, player: Address) {
+            emit_voucher_minted(&env, &player);
+        }
+    }
+
     // ── EVT-01 ────────────────────────────────────────────────────────────────
 
-    /// EVT-01: `emit_funds_withdrawn` publishes one event whose data equals the amount.
     #[test]
     fn evt_01_emit_funds_withdrawn_data_equals_amount() {
         let env = Env::default();
         let token = Address::generate(&env);
         let to = Address::generate(&env);
 
-        emit_funds_withdrawn(&env, &token, &to, 1_500);
+        let contract_id = env.register(EventTestContract, ());
+        let client = EventTestContractClient::new(&env, &contract_id);
+        client.emit_funds(&token, &to, &1_500);
 
         let events = env.events().all();
         assert_eq!(events.len(), 1, "EVT-01: exactly one event must be emitted");
@@ -83,13 +117,14 @@ mod tests {
 
     // ── EVT-02 ────────────────────────────────────────────────────────────────
 
-    /// EVT-02: `emit_player_removed_from_game` publishes one event whose data equals turn_count.
     #[test]
     fn evt_02_emit_player_removed_data_equals_turn_count() {
         let env = Env::default();
         let player = Address::generate(&env);
 
-        emit_player_removed_from_game(&env, 42, &player, 7);
+        let contract_id = env.register(EventTestContract, ());
+        let client = EventTestContractClient::new(&env, &contract_id);
+        client.emit_removed(&42, &player, &7);
 
         let events = env.events().all();
         assert_eq!(events.len(), 1, "EVT-02: exactly one event must be emitted");
@@ -101,13 +136,14 @@ mod tests {
 
     // ── EVT-03 ────────────────────────────────────────────────────────────────
 
-    /// EVT-03: `emit_controller_updated` publishes exactly one event.
     #[test]
     fn evt_03_emit_controller_updated_publishes_event() {
         let env = Env::default();
         let controller = Address::generate(&env);
 
-        emit_controller_updated(&env, &controller);
+        let contract_id = env.register(EventTestContract, ());
+        let client = EventTestContractClient::new(&env, &contract_id);
+        client.emit_controller(&controller);
 
         let events = env.events().all();
         assert_eq!(events.len(), 1, "EVT-03: exactly one event must be emitted");
@@ -115,13 +151,14 @@ mod tests {
 
     // ── EVT-04 ────────────────────────────────────────────────────────────────
 
-    /// EVT-04: `emit_player_registered` publishes exactly one event.
     #[test]
     fn evt_04_emit_player_registered_publishes_event() {
         let env = Env::default();
         let player = Address::generate(&env);
 
-        emit_player_registered(&env, &player);
+        let contract_id = env.register(EventTestContract, ());
+        let client = EventTestContractClient::new(&env, &contract_id);
+        client.emit_registered(&player);
 
         let events = env.events().all();
         assert_eq!(events.len(), 1, "EVT-04: exactly one event must be emitted");
@@ -129,16 +166,32 @@ mod tests {
 
     // ── EVT-05 ────────────────────────────────────────────────────────────────
 
-    /// EVT-05: `emit_ownership_transferred` publishes exactly one event.
     #[test]
     fn evt_05_emit_ownership_transferred_publishes_event() {
         let env = Env::default();
         let old_owner = Address::generate(&env);
         let new_owner = Address::generate(&env);
 
-        emit_ownership_transferred(&env, &old_owner, &new_owner);
+        let contract_id = env.register(EventTestContract, ());
+        let client = EventTestContractClient::new(&env, &contract_id);
+        client.emit_ownership(&old_owner, &new_owner);
 
         let events = env.events().all();
         assert_eq!(events.len(), 1, "EVT-05: exactly one event must be emitted");
+    }
+
+    // ── EVT-06 ────────────────────────────────────────────────────────────────
+
+    #[test]
+    fn evt_06_emit_voucher_minted_publishes_event() {
+        let env = Env::default();
+        let player = Address::generate(&env);
+
+        let contract_id = env.register(EventTestContract, ());
+        let client = EventTestContractClient::new(&env, &contract_id);
+        client.emit_voucher(&player);
+
+        let events = env.events().all();
+        assert_eq!(events.len(), 1, "EVT-06: exactly one event must be emitted");
     }
 }

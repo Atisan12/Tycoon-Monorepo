@@ -38,6 +38,7 @@ pub enum DataKey {
     RewardSystem,          // reward system contract address
     BackendGameController, // backend game controller address
     StateVersion,          // u32 version of the state schema
+    VoucherMinted(Address), // address -> bool
 }
 
 /// Information about a collectible NFT
@@ -216,4 +217,19 @@ pub fn set_state_version(env: &Env, version: u32) {
     env.storage()
         .instance()
         .set(&DataKey::StateVersion, &version);
+}
+
+/// Check if a voucher has been minted for an address
+pub fn is_voucher_minted(env: &Env, player: &Address) -> bool {
+    env.storage()
+        .persistent()
+        .get(&DataKey::VoucherMinted(player.clone()))
+        .unwrap_or(false)
+}
+
+/// Set the voucher minted status for an address
+pub fn set_voucher_minted(env: &Env, player: &Address) {
+    env.storage()
+        .persistent()
+        .set(&DataKey::VoucherMinted(player.clone()), &true);
 }

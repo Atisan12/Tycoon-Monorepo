@@ -580,6 +580,6 @@ fn test_boost_system_invalid_state_handling() {
     assert_eq!(boost_client.get_boosts(&player).len(), 0);
     assert_eq!(boost_client.calculate_total_boost(&player), 10000); // default base is 10000
     
-    boost_client.remove_boost(&player, &999); // removing non-existent should not panic
+    boost_client.admin_revoke_boost(&player, &999); // removing non-existent should not panic
     assert_eq!(boost_client.calculate_total_boost(&player), 10000);
 }

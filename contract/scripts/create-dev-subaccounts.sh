@@ -48,7 +48,7 @@ if stellar keys address "$KEY_NAME" &>/dev/null 2>&1; then
   warn "Key '$KEY_NAME' already exists in keystore — skipping generation."
 else
   info "Generating keypair '$KEY_NAME'..."
-  stellar keys generate "$KEY_NAME" --network testnet --no-fund
+  stellar keys generate "$KEY_NAME" --network testnet
   info "Keypair created."
 fi
 
@@ -64,6 +64,12 @@ if [[ "$HTTP_STATUS" == "200" ]]; then
   info "Funded successfully (10,000 XLM)."
 elif [[ "$HTTP_STATUS" == "400" ]]; then
   warn "Friendbot returned 400 — account may already be funded. Continuing."
+elif [[ "$HTTP_STATUS" == "429" ]]; then
+  error "Friendbot returned HTTP 429 (Rate Limit Exceeded). Please wait a few minutes and try again."
+elif [[ "$HTTP_STATUS" == "500" || "$HTTP_STATUS" == "503" ]]; then
+  error "Friendbot returned HTTP $HTTP_STATUS (Server Failure). The testnet Friendbot service is currently down or congested. Check https://status.stellar.org."
+elif [[ "$HTTP_STATUS" == "000" ]]; then
+  error "Could not reach Friendbot (Network Connection Error). Please check your internet connection or network proxy."
 else
   error "Friendbot request failed (HTTP $HTTP_STATUS). Check https://status.stellar.org."
 fi
