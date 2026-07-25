@@ -9,6 +9,15 @@ import { JOIN_ROOM_I18N } from '@/lib/join-room/i18n-keys';
 
 export default {
   title: 'Visual Regression/Baseline',
+  parameters: {
+    // Chromatic baseline: these stories are captured on every push to main
+    // (see .github/workflows/frontend-ci.yml's chromatic job). To update a
+    // baseline after an intentional visual change, run
+    // `npm run chromatic` from `frontend/` with CHROMATIC_PROJECT_TOKEN set,
+    // then accept the new snapshots in the Chromatic UI.
+    chromatic: { disableSnapshot: false },
+  },
+  tags: ['visual-regression'],
 };
 
 const sampleItems: ShopItemData[] = [
