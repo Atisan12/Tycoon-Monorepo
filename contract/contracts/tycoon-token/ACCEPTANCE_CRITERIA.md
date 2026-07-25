@@ -127,7 +127,9 @@ Issue: SW-CT-004
 | Initialize / metadata | `test_initialization` |
 | Double-init guard | `test_cannot_reinitialize` |
 | Admin mint (positive) | `test_admin_can_mint` |
-| Admin mint (zero rejected) | `test_cannot_mint_zero` |
+| Admin mint (zero rejected) | `test_cannot_mint_zero`, `test_mint_zero_rejected` |
+| Burn (zero rejected) | `test_burn_zero_rejected` |
+| burn_from (zero rejected) | `test_burn_from_zero_rejected` |
 | Transfer (success) | `test_transfer` |
 | Transfer (insufficient balance) | `test_transfer_insufficient_balance` |
 | Approve + transfer_from | `test_approve_and_transfer_from` |

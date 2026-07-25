@@ -228,6 +228,8 @@ impl TycoonToken {
         .publish(&e);
     }
 
+    /// Mints `amount` to `to`. `amount` must be strictly positive — zero is
+    /// rejected (unlike `transfer`, minting has no valid no-op case).
     pub fn mint(e: Env, to: Address, amount: i128) {
         require_admin(&e);
 
@@ -436,6 +438,8 @@ impl TycoonToken {
         TransferEvent { from, to, amount }.publish(&e);
     }
 
+    /// Burns `amount` from `from`. `amount` must be strictly positive — zero
+    /// is rejected, same as a negative amount.
     pub fn burn(e: Env, from: Address, amount: i128) {
         from.require_auth();
         if amount <= 0 {
@@ -463,6 +467,8 @@ impl TycoonToken {
         BurnEvent { from, amount }.publish(&e);
     }
 
+    /// Burns `amount` from `from` on `spender`'s allowance. `amount` must be
+    /// strictly positive — zero is rejected, same as a negative amount.
     pub fn burn_from(e: Env, spender: Address, from: Address, amount: i128) {
         spender.require_auth();
         if amount <= 0 {
