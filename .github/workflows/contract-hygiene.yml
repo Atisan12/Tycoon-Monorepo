@@ -1,0 +1,39 @@
+name: Contract Hygiene
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  contract-hygiene:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contract
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-unknown-unknown
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: contract
+
+      - name: Check formatting (cargo fmt --check)
+        # Fails if any file diverges from `cargo fmt` output.
+        run: make fmt-check
+
+      - name: Lint with clippy (-D warnings)
+        # Treats every warning as a hard error to keep the workspace warning-free.
+        run: make clippy-deny

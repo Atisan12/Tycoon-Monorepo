@@ -32,3 +32,6 @@ mod security_review_checklist;
 mod simulation_scenarios;
 #[cfg(test)]
 mod token_reward_flow;
+// Collectibles cross-contract integration tests
+#[cfg(test)]
+mod collectibles_integration;
