@@ -425,6 +425,55 @@ describe('JoinRoomForm', () => {
 
       expect(input).toHaveFocus();
     });
+
+    it('should advertise Escape keyboard shortcut via aria-keyshortcuts on input', () => {
+      render(<JoinRoomForm />);
+      const input = screen.getByPlaceholderText('e.g. TYCOON');
+
+      expect(input).toHaveAttribute('aria-keyshortcuts', 'Escape');
+    });
+
+    it('should advertise Ctrl+Enter and Meta+Enter keyboard shortcuts via aria-keyshortcuts on button', () => {
+      render(<JoinRoomForm />);
+      const submitButton = screen.getByRole('button', { name: /join/i });
+
+      expect(submitButton).toHaveAttribute('aria-keyshortcuts', 'ctrl+Return meta+Return');
+    });
+
+    it('should handle Escape key to clear input when focused', async () => {
+      render(<JoinRoomForm />);
+      const input = screen.getByPlaceholderText('e.g. TYCOON') as HTMLInputElement;
+
+      await userEvent.type(input, 'ABC123');
+      expect(input.value).toBe('ABC123');
+
+      await userEvent.keyboard('{Escape}');
+      expect(input.value).toBe('');
+    });
+
+    it('should handle Ctrl+Enter to submit form', async () => {
+      render(<JoinRoomForm />);
+      const input = screen.getByPlaceholderText('e.g. TYCOON');
+
+      await userEvent.type(input, 'TYCOON');
+      await userEvent.keyboard('{Control>}{Enter}{/Control}');
+
+      await waitFor(() => {
+        expect(mockApiPost).toHaveBeenCalled();
+      });
+    });
+
+    it('should handle Meta+Enter (Cmd+Enter on Mac) to submit form', async () => {
+      render(<JoinRoomForm />);
+      const input = screen.getByPlaceholderText('e.g. TYCOON');
+
+      await userEvent.type(input, 'TYCOON');
+      await userEvent.keyboard('{Meta>}{Enter}{/Meta}');
+
+      await waitFor(() => {
+        expect(mockApiPost).toHaveBeenCalled();
+      });
+    });
   });
 
   describe('Button State Management', () => {

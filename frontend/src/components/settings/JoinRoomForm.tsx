@@ -278,6 +278,7 @@ export default function JoinRoomForm({
           aria-required="true"
           aria-describedby={errors.roomCode ? errorId : undefined}
           aria-invalid={!!errors.roomCode}
+          aria-keyshortcuts="Escape"
           className="bg-[var(--tycoon-bg)] border-[var(--tycoon-border)] text-[var(--tycoon-text)] placeholder:text-[var(--tycoon-text)]/40 focus-visible:ring-[var(--tycoon-accent)] font-orbitron tracking-widest uppercase"
         />
       </FormField>
@@ -287,6 +288,7 @@ export default function JoinRoomForm({
         disabled={!isValid || isLoading}
         aria-busy={isLoading}
         aria-disabled={!isValid || isLoading}
+        aria-keyshortcuts="ctrl+Return meta+Return"
         className="w-full bg-[var(--tycoon-accent)] text-[var(--tycoon-bg)] font-orbitron font-bold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-[var(--tycoon-accent)] focus-visible:ring-offset-2"
       >
         <span className="inline-block min-w-[4.5rem] text-center">
