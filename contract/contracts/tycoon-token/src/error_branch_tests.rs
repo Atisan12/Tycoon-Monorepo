@@ -295,10 +295,10 @@ fn test_burn_negative_amount() {
     client.burn(&admin, &-1);
 }
 
-/// `burn` of zero is rejected.
+/// `burn` of zero is rejected (zero is not a no-op — it panics like any non-positive amount).
 #[test]
 #[should_panic(expected = "Amount must be positive")]
-fn test_burn_zero_is_noop() {
+fn test_burn_zero_rejected() {
     let (_e, client, admin) = setup();
     client.burn(&admin, &0);
 }
@@ -312,10 +312,10 @@ fn test_mint_negative_amount() {
     client.mint(&user, &-1);
 }
 
-/// `mint` of zero is rejected.
+/// `mint` of zero is rejected (zero is not a no-op — it panics like any non-positive amount).
 #[test]
 #[should_panic(expected = "Amount must be positive")]
-fn test_mint_zero_is_noop() {
+fn test_mint_zero_rejected() {
     let (e, client, _admin) = setup();
     let user = Address::generate(&e);
     client.mint(&user, &0);
@@ -332,10 +332,10 @@ fn test_burn_from_negative_amount() {
     client.burn_from(&spender, &admin, &-1);
 }
 
-/// `burn_from` of zero is rejected.
+/// `burn_from` of zero is rejected (zero is not a no-op — it panics like any non-positive amount).
 #[test]
 #[should_panic(expected = "Amount must be positive")]
-fn test_burn_from_zero_is_noop() {
+fn test_burn_from_zero_rejected() {
     let (e, client, admin) = setup();
     let spender = Address::generate(&e);
     let allowance: i128 = 1_000_000_000_000_000_000;
