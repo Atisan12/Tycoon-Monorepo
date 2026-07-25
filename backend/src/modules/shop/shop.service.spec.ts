@@ -362,11 +362,41 @@ describe('ShopService', () => {
       expect(result[0].id).toBe(1);
     });
 
-    it('should handle empty bulk update list', async () => {
-      const result = await service.bulkUpdate([]);
-
-      expect(result).toEqual([]);
+    it('should reject an empty bulk update list', async () => {
+      await expect(service.bulkUpdate([])).rejects.toThrow(BadRequestException);
       expect(shopItemRepositoryMock.save).not.toHaveBeenCalled();
+    });
+
+    it('should reject a bulk update list exceeding the max batch size', async () => {
+      const oversized = Array.from({ length: 101 }, (_, i) => ({
+        id: i + 1,
+        active: true,
+      }));
+
+      await expect(service.bulkUpdate(oversized)).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(shopItemRepositoryMock.save).not.toHaveBeenCalled();
+    });
+
+    it('should accept a bulk update list at the max batch size', async () => {
+      const atLimit = Array.from({ length: 100 }, (_, i) => ({
+        id: i + 1,
+        active: true,
+      }));
+
+      shopItemRepositoryMock.findOne.mockResolvedValue({
+        id: 1,
+        name: 'Item',
+        active: false,
+      });
+      shopItemRepositoryMock.save.mockImplementation((item) =>
+        Promise.resolve(item),
+      );
+
+      const result = await service.bulkUpdate(atLimit);
+
+      expect(result).toHaveLength(100);
     });
   });
 });

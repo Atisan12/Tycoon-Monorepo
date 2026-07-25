@@ -178,7 +178,9 @@ export class AdminShopController {
     @Param('id', ParseIntPipe) id: number,
     @UploadedFiles() files: Express.Multer.File[],
   ): Promise<ShopItem> {
-    const imageUrls = files.map((file) => `/uploads/shop-items/${file.filename}`);
+    const imageUrls = files.map(
+      (file) => `/uploads/shop-items/${file.filename}`,
+    );
     return this.shopService.update(id, {
       images: imageUrls,
     });
@@ -187,6 +189,11 @@ export class AdminShopController {
   /**
    * POST /admin/shop/bulk/update
    * Bulk update multiple shop items (price, status, etc.)
+   *
+   * Batch size must be between 1 and MAX_BULK_UPDATE_ITEMS (enforced by
+   * BulkUpdateShopItemsDto, 400 on empty/oversized). Partial-success policy:
+   * per-item failures (e.g. unknown id) are skipped and logged rather than
+   * failing the whole batch — see ShopService.bulkUpdate for details.
    */
   @Post('bulk/update')
   @AuditLog(AuditAction.SHOP_ITEM_UPDATED)
@@ -195,12 +202,14 @@ export class AdminShopController {
   @ApiBody({ type: BulkUpdateShopItemsDto })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Items updated successfully.',
+    description:
+      'Items updated successfully (may be a subset of the request; see partial-success policy).',
     type: [ShopItem],
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
-    description: 'Invalid bulk update request.',
+    description:
+      'items is empty, exceeds the batch size limit, or fails item-level validation.',
   })
   @ApiResponse({
     status: HttpStatus.FORBIDDEN,

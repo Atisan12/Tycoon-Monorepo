@@ -20,6 +20,7 @@ import { GiftStatus } from '../gifts/enums/gift-status.enum';
 import { RedisService } from '../redis/redis.service';
 import { secureRandomHex } from '../../common/crypto-secure-random';
 import { PaginationService, PaginatedResponse } from '../../common';
+import { MAX_BULK_UPDATE_ITEMS } from './dto/bulk-update-shop-items.dto';
 
 /** @deprecated Use PaginatedResponse<ShopItem> from common instead. */
 export type PaginatedShopItems = PaginatedResponse<ShopItem>;
@@ -199,8 +200,12 @@ export class ShopService {
         quantity,
         unit_price: shopItem.price,
         total_price: totalPrice.toFixed(2),
+        original_price: totalPrice.toFixed(2),
+        discount_amount: '0.00',
+        final_price: totalPrice.toFixed(2),
         currency: shopItem.currency,
         payment_method,
+        status: 'completed',
         is_gift: true,
         transaction_id: this.generateTransactionId(),
         metadata: {
@@ -276,12 +281,30 @@ export class ShopService {
   }
 
   /**
-   * Bulk update multiple shop items
-   * Supports updating price and/or active status for multiple items in a single operation
+   * Bulk update multiple shop items.
+   * Supports updating price and/or active status for multiple items in a single operation.
+   *
+   * Partial-success policy: each item is applied independently. If an item
+   * fails (e.g. not found), it is logged and skipped — it does NOT abort or
+   * roll back the other items in the batch. The response contains only the
+   * items that were updated successfully, so callers must compare the
+   * returned array against the request to detect skipped items.
+   *
+   * Guarded against empty/oversized batches as defense-in-depth; the primary
+   * enforcement is `BulkUpdateShopItemsDto` validation at the HTTP boundary.
    */
   async bulkUpdate(
     updates: Array<{ id: number; price?: number; active?: boolean }>,
   ): Promise<ShopItem[]> {
+    if (updates.length === 0) {
+      throw new BadRequestException('items must not be empty');
+    }
+    if (updates.length > MAX_BULK_UPDATE_ITEMS) {
+      throw new BadRequestException(
+        `items must not contain more than ${MAX_BULK_UPDATE_ITEMS} elements`,
+      );
+    }
+
     const updatedItems: ShopItem[] = [];
 
     for (const update of updates) {

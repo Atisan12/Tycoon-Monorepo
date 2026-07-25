@@ -21,6 +21,23 @@ integration-tests/
     └── reward_system_integration.rs    # Reward distribution & vouchers
 ```
 
+### Additional Scenario Modules (`src/`)
+
+Beyond the top-level `tests/` suites, `src/` hosts focused integration scenario
+modules that are composed into the suites above:
+
+- `boost_admin_flow.rs` — Admin-driven boost system configuration and control flows
+- `boost_system_integration.rs` — Boost system cross-contract integration
+- `fixture.rs` — Shared test fixtures and setup helpers
+- `game_reward_flow.rs` — Game-to-reward-system payout flows
+- `game_token_flow.rs` — Game-to-token-contract flows
+- `legacy_entrypoints.rs` — Coverage for deprecated/legacy entrypoints kept for backward compatibility
+- `multi_player_flow.rs` — Multi-player game session scenarios
+- `reward_transfer_flow.rs` — Reward transfer and voucher redemption flows
+- `security_review_checklist.rs` — Security review scenario checklist
+- `simulation_scenarios.rs` — Broader end-to-end simulation scenarios
+- `token_reward_flow.rs` — Token/reward interaction flows
+
 ## Running Tests
 
 ### Run All Integration Tests

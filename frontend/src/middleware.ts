@@ -1,6 +1,22 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+// MIGRATION NOTE (Next.js 16 middleware -> proxy):
+// This file still uses the legacy `middleware.ts` convention (auth-gate
+// redirect + CSP nonce injection via response headers). Next 16 is moving
+// this responsibility toward a `proxy.ts` entrypoint. We are deferring that
+// migration here rather than porting blind, because:
+//   1. The nonce-in-header handoff to the root layout (see `x-nonce` below)
+//      needs to keep working across whatever the new entrypoint's request/
+//      response lifecycle looks like, and that needs to be verified against
+//      a running app, not guessed at.
+//   2. The auth-gate redirect list (`protectedRoutes`) is security-relevant;
+//      an unverified rewrite of the enclosing function risks silently
+//      dropping route protection.
+// Once the `proxy.ts` convention and its header-mutation API are confirmed
+// against this app's actual Next 16.1.2 runtime, port this logic over as a
+// single, verifiable change rather than folding it into an unrelated fix.
+
 /**
  * Generate a cryptographically secure nonce for CSP (Edge-compatible)
  */

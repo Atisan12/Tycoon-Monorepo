@@ -34,6 +34,20 @@ If a user cannot see their purchased items:
     -   Redis Key: `shop:inventory:<USER_ID>`
     -   Action: `DEL shop:inventory:<USER_ID>`
 
+### 4. Duplicate Purchase Reports (Idempotency)
+`POST /shop/purchase` accepts an `Idempotency-Key` header and is wrapped with
+`IdempotencyInterceptor` (`src/modules/redis/idempotency.interceptor.ts`), matching the
+claim → complete → fail lifecycle used by `shop-api`'s `IdempotencyService.claimKey`:
+-   **Claim**: on a new key, the request is marked `processing` in Redis (`idempotency:<key>`, 24h TTL) before the handler runs.
+-   **Complete**: on success, the response is cached and replayed (with `X-Idempotency-Replayed: true`) for any repeat request using the same key.
+-   **Fail**: if the handler throws, the key is deleted so the client can safely retry with the same key.
+-   A second request while the first is still `processing` receives `409 Conflict`.
+-   Requests without an `Idempotency-Key` header are not deduplicated — each is processed independently.
+
+If a user reports being charged twice for what they believe was one click, check whether
+the client sent the same `Idempotency-Key` on both requests; if not, this is expected
+behavior and should be treated as two independent purchases (see Section 1).
+
 ## Operational Procedures
 
 ### Deactivating a Malfunctioning Shop Item
