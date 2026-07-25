@@ -18,6 +18,7 @@ import {
   mapJoinRoomErrors,
   sanitiseRoomCode,
 } from "@/lib/join-room/security";
+import { getLastJoinCode, saveLastJoinCode } from "@/lib/join-room/storage";
 import { apiClient } from "@/lib/api/client";
 import type { GameResponse } from "@/lib/api/types/dto";
 import { useJoinRoomTelemetry } from "@/hooks/useJoinRoomTelemetry";
@@ -65,7 +66,7 @@ export default function JoinRoomForm({
 }: JoinRoomFormProps = {}): React.JSX.Element {
   const { t } = useTranslation("common");
   const router = useRouter();
-  const [code, setCode] = useState(previewState?.code ?? "");
+  const [code, setCode] = useState(previewState?.code ?? getLastJoinCode() ?? "");
   const [errors, setErrors] = useState<FieldErrors>(previewState?.errors ?? {});
   const [isLoading, setIsLoading] = useState(previewState?.isLoading ?? false);
   const [connectionError, setConnectionError] = useState<ConnectionErrorType | null>(null);
@@ -182,6 +183,9 @@ export default function JoinRoomForm({
 
         // Track successful join
         trackJoinSucceeded();
+
+        // Persist the room code for session resumption
+        saveLastJoinCode(result.data.roomCode);
 
         // Report performance metrics (non-blocking)
         if (typeof window !== "undefined" && "requestIdleCallback" in window) {
