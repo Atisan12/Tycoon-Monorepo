@@ -1,6 +1,7 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import GameWaiting from "./GameWaiting";
+import { JOIN_ROOM_STORAGE_KEY } from "@/lib/join-room/storage";
 
 const pushMock = vi.fn();
 const mockSearchParams = { get: vi.fn() };
@@ -47,7 +48,7 @@ describe("GameWaiting", () => {
   });
 
   it("falls back to a saved room code when query params are missing", async () => {
-    sessionStorage.setItem("tycoon.lastJoinCode", "ABC123");
+    sessionStorage.setItem(JOIN_ROOM_STORAGE_KEY, "ABC123");
     mockSearchParams.get.mockReturnValue(null);
     render(<GameWaiting />);
 

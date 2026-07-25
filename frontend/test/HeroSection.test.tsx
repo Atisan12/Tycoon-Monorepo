@@ -204,7 +204,7 @@ describe("HeroSection — SW-FE-003: Vitest / RTL coverage", () => {
   });
 
   describe("Telemetry", () => {
-    it("fires hero_view telemetry event on mount", () => {
+    it("fires hero_view telemetry event on mount and dispatches CustomEvent", () => {
       const received: CustomEvent[] = [];
       const handler = (e: Event) => received.push(e as CustomEvent);
       window.addEventListener("tycoon:telemetry", handler);
@@ -212,9 +212,17 @@ describe("HeroSection — SW-FE-003: Vitest / RTL coverage", () => {
       render(<HeroSection />);
 
       window.removeEventListener("tycoon:telemetry", handler);
-      // hero_view fires when NEXT_PUBLIC_TELEMETRY_ENABLED=true; in test env
-      // the env var is unset so the guard returns early — assert the hook ran
-      // without throwing (component renders successfully).
+
+      if (process.env.NEXT_PUBLIC_ENABLE_ANALYTICS !== "false") {
+        expect(received.length).toBeGreaterThan(0);
+        const telemetryEvent = received.find((e) => e.detail?.event === "hero_viewed");
+        expect(telemetryEvent).toBeDefined();
+        if (telemetryEvent) {
+          expect(telemetryEvent.detail.payload).toHaveProperty("route");
+          expect(telemetryEvent.detail.payload).toHaveProperty("source");
+        }
+      }
+
       expect(screen.getByTestId("hero-main-title")).toBeInTheDocument();
     });
   });
