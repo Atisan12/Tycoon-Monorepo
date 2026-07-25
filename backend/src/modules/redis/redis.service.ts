@@ -12,6 +12,7 @@ import { AuditAction } from '../audit-trail/entities/audit-trail.entity';
 export class RedisService {
   private readonly logger: LoggerService;
   private readonly auditEnabled: boolean;
+  private readonly environment: string;
   private redis: Redis;
 
   // Prometheus metrics
@@ -29,6 +30,7 @@ export class RedisService {
     @Optional() private readonly auditTrailService?: AuditTrailService,
   ) {
     this.logger = loggerService;
+    this.environment = configService.get<string>('NODE_ENV') || 'development';
 
     const redisConfig = configService.get<{
       host: string;
@@ -115,6 +117,17 @@ export class RedisService {
       );
   }
 
+  /**
+   * Build a namespaced cache key prefixed with NODE_ENV to prevent
+   * multi-environment cache collisions. Keys in dev, staging, and production
+   * will not conflict when using the same Redis instance.
+   * @param key Base cache key (e.g., "refresh_token:123")
+   * @returns Namespaced key (e.g., "development:refresh_token:123")
+   */
+  private buildKey(key: string): string {
+    return `${this.environment}:${key}`;
+  }
+
   // Session management
   async setRefreshToken(
     userId: string,
@@ -125,7 +138,8 @@ export class RedisService {
       operation: 'set_refresh_token',
     });
     try {
-      await this.redis.setex(`refresh_token:${userId}`, ttl, token);
+      const key = this.buildKey(`refresh_token:${userId}`);
+      await this.redis.setex(key, ttl, token);
       this.redisOperationsTotal.inc({ operation: 'set_refresh_token' });
       this.logger.debug(`Set refresh token for user ${userId}`, 'RedisService');
     } catch (error: any) {
@@ -145,7 +159,8 @@ export class RedisService {
       operation: 'get_refresh_token',
     });
     try {
-      const result = await this.redis.get(`refresh_token:${userId}`);
+      const key = this.buildKey(`refresh_token:${userId}`);
+      const result = await this.redis.get(key);
       this.redisOperationsTotal.inc({ operation: 'get_refresh_token' });
       this.logger.debug(
         `Retrieved refresh token for user ${userId}`,
@@ -169,7 +184,8 @@ export class RedisService {
       operation: 'delete_refresh_token',
     });
     try {
-      await this.redis.del(`refresh_token:${userId}`);
+      const key = this.buildKey(`refresh_token:${userId}`);
+      await this.redis.del(key);
       this.redisOperationsTotal.inc({ operation: 'delete_refresh_token' });
       this.logger.debug(
         `Deleted refresh token for user ${userId}`,
@@ -221,7 +237,8 @@ export class RedisService {
       operation: 'cache_get',
     });
     try {
-      const value = await this.cacheManager.get<T>(key);
+      const namespacedKey = this.buildKey(key);
+      const value = await this.cacheManager.get<T>(namespacedKey);
       if (value !== undefined) {
         this.cacheHitsTotal.inc();
         this.logger.debug(`Cache HIT: ${key}`, 'RedisService');
@@ -248,7 +265,8 @@ export class RedisService {
       operation: 'cache_set',
     });
     try {
-      await this.cacheManager.set(key, value, ttl);
+      const namespacedKey = this.buildKey(key);
+      await this.cacheManager.set(namespacedKey, value, ttl);
       this.redisOperationsTotal.inc({ operation: 'cache_set' });
       this.logger.debug(`Cache SET: ${key}`, 'RedisService');
       this.emitAudit(AuditAction.CACHE_SET, {
@@ -272,7 +290,8 @@ export class RedisService {
       operation: 'cache_del',
     });
     try {
-      await this.cacheManager.del(key);
+      const namespacedKey = this.buildKey(key);
+      await this.cacheManager.del(namespacedKey);
       this.redisOperationsTotal.inc({ operation: 'cache_del' });
       this.logger.debug(`Cache DEL: ${key}`, 'RedisService');
       this.emitAudit(AuditAction.CACHE_DEL, { key });
@@ -293,7 +312,8 @@ export class RedisService {
       operation: 'del_by_pattern',
     });
     try {
-      const keys = await this.redis.keys(pattern);
+      const namespacedPattern = this.buildKey(pattern);
+      const keys = await this.redis.keys(namespacedPattern);
       if (keys.length > 0) {
         await this.redis.del(...keys);
         this.redisOperationsTotal.inc({ operation: 'del_by_pattern' });
@@ -323,13 +343,13 @@ export class RedisService {
       operation: 'cache_reset',
     });
     try {
-      // Reset cache by deleting all keys with our prefix
-      const keys = await this.redis.keys('cache:*');
+      const namespacedPattern = this.buildKey('*');
+      const keys = await this.redis.keys(namespacedPattern);
       if (keys.length > 0) {
         await this.redis.del(...keys);
         this.redisOperationsTotal.inc({ operation: 'cache_reset' });
         this.logger.log(
-          `Reset cache: deleted ${keys.length} keys`,
+          `Reset cache: deleted ${keys.length} keys for environment ${this.environment}`,
           'RedisService',
         );
       }

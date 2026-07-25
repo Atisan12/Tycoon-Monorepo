@@ -172,6 +172,42 @@ export class PropertiesService {
   }
 
   /**
+   * Calculate rent for a property based on house count and mortgage status.
+   *
+   * Edge cases:
+   * - If mortgaged: rent is 0 (property generates no income while mortgaged)
+   * - If 0 houses: rent_site_only applies
+   * - If 1-4 houses: corresponding rent tier applies
+   * - If 5 houses (hotel): rent_hotel applies
+   *
+   * @param property - The property entity
+   * @param houseCount - Number of houses on the property (0-5, where 5 = hotel)
+   * @returns Rent amount due (0 if mortgaged)
+   */
+  calculateRent(property: Property, houseCount: number): number {
+    if (property.is_mortgaged) {
+      return 0;
+    }
+
+    switch (houseCount) {
+      case 0:
+        return property.rent_site_only;
+      case 1:
+        return property.rent_one_house;
+      case 2:
+        return property.rent_two_houses;
+      case 3:
+        return property.rent_three_houses;
+      case 4:
+        return property.rent_four_houses;
+      case 5:
+        return property.rent_hotel;
+      default:
+        return 0;
+    }
+  }
+
+  /**
    * Validate rent values generally increase with more houses
    * Logs warning if not, but doesn't throw error (game design decision)
    */
