@@ -139,6 +139,23 @@ export class AdminShopController {
     }),
   )
   @ApiOperation({ summary: 'Upload images for a shop item (admin only)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        images: {
+          type: 'array',
+          items: {
+            type: 'string',
+            format: 'binary',
+          },
+          description: 'Up to 5 image files',
+        },
+      },
+      required: ['images'],
+    },
+  })
   @ApiParam({ name: 'id', type: Number, description: 'Shop item ID' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -175,6 +192,7 @@ export class AdminShopController {
   @AuditLog(AuditAction.SHOP_ITEM_UPDATED)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Bulk update shop items (admin only)' })
+  @ApiBody({ type: BulkUpdateShopItemsDto })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Items updated successfully.',
