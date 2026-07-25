@@ -320,18 +320,21 @@ export class GamesController {
   }
 
   @Post(':gameId/players/:playerId/pay-rent')
+  @UseGuards(JwtAuthGuard)
   @Idempotent()
   @ApiOperation({ summary: 'Pay rent with boost modifiers applied' })
   async payRent(
     @Param('gameId', ParseIntPipe) gameId: number,
     @Param('playerId', ParseIntPipe) playerId: number,
     @Body() dto: PayRentDto,
+    @Req() req: Request & { user: { id: number } },
   ) {
     return this.gamePlayersService.payRent(
       gameId,
       playerId,
       dto.payeeId,
       dto.baseRent,
+      req.user.id,
     );
   }
 
