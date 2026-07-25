@@ -199,8 +199,12 @@ export class ShopService {
         quantity,
         unit_price: shopItem.price,
         total_price: totalPrice.toFixed(2),
+        original_price: totalPrice.toFixed(2),
+        discount_amount: '0.00',
+        final_price: totalPrice.toFixed(2),
         currency: shopItem.currency,
         payment_method,
+        status: 'completed',
         is_gift: true,
         transaction_id: this.generateTransactionId(),
         metadata: {
