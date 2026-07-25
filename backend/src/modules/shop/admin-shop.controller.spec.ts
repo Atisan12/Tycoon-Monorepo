@@ -112,15 +112,9 @@ describe('AdminShopController', () => {
       expect(result).toEqual([mockShopItem]);
     });
 
-    it('should handle empty bulk update list', async () => {
-      const bulkUpdateDto: BulkUpdateShopItemsDto = {
-        items: [],
-      };
-
-      await controller.bulkUpdate(bulkUpdateDto);
-
-      expect(service.bulkUpdate).toHaveBeenCalledWith([]);
-    });
+    // Empty/oversized batch rejection (400) is enforced by
+    // BulkUpdateShopItemsDto validation and ShopService.bulkUpdate —
+    // see shop-dto-validation.spec.ts and shop.service.spec.ts.
   });
 
   describe('uploadImages', () => {
