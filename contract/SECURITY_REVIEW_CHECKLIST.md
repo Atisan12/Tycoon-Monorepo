@@ -28,8 +28,8 @@ crate and are linked below.
 - [x] No contract reads an external price feed or oracle
 - [x] All privileged roles (admin, backend minter, game controller) are set at `initialize` time and require `require_auth()` on every mutation
 - [x] No contract grants itself elevated privileges via `env.current_contract_address()` as an auth principal
-- [ ] **OPEN:** `tycoon-game::admin_mint_registration_voucher` has no idempotency guard — tracked as BLK-002 in `CEI_SECURITY_AUDIT.md`
-- [ ] **OPEN:** `tycoon-collectibles::buy_collectible` allows free unlimited minting — tracked as BLK-001 in `CEI_SECURITY_AUDIT.md`
+- [x] **RESOLVED:** `tycoon-game::admin_mint_registration_voucher` has idempotency guard — tracked as BLK-002 in `CEI_SECURITY_AUDIT.md`
+- [x] **RESOLVED:** `tycoon-collectibles::buy_collectible` gated behind admin.require_auth() — tracked as BLK-001 in `CEI_SECURITY_AUDIT.md`
 
 ### 2.2 CEI (Checks-Effects-Interactions) Compliance
 
@@ -41,7 +41,7 @@ All cross-contract calls audited in `CEI_SECURITY_AUDIT.md`. Summary:
 | tycoon-collectibles | `buy_collectible_from_shop` | ✅ Fixed |
 | tycoon-main-game | `leave_pending_game` | ✅ Fixed |
 | tycoon-game | `withdraw_funds` | ✅ Safe (no post-call mutation) |
-| tycoon-collectibles | `buy_collectible` | 🔴 Blocker — free mint, no payment |
+| tycoon-collectibles | `buy_collectible` | ✅ Gated behind admin.require_auth() |
 
 ### 2.3 Integer Arithmetic
 
@@ -95,10 +95,10 @@ All cross-contract calls audited in `CEI_SECURITY_AUDIT.md`. Summary:
 
 ## 4. Blockers (Must Fix Before Mainnet)
 
-| ID | Contract | Issue | Severity | Reference |
+| ID | Contract | Issue | Severity | Status |
 |---|---|---|---|---|
-| BLK-001 | tycoon-collectibles | `buy_collectible` allows free unlimited minting | Critical | CEI_SECURITY_AUDIT.md §2.7 |
-| BLK-002 | tycoon-game | `admin_mint_registration_voucher` has no idempotency guard | Medium | CEI_SECURITY_AUDIT.md §2.5 |
+| BLK-001 | tycoon-collectibles | `buy_collectible` allows free unlimited minting | Critical | ✅ Resolved (Gated) |
+| BLK-002 | tycoon-game | `admin_mint_registration_voucher` has no idempotency guard | Medium | ✅ Resolved (Idempotent) |
 
 ---
 

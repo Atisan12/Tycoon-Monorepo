@@ -77,9 +77,17 @@ dev: fmt clippy test build-wasm
 # --- CI (.github/workflows/ci.yml — Contracts job) ----------------------------
 
 # Mirrors: cargo build --target wasm32-unknown-unknown --release
+# Followed by wasm-opt -Oz (binaryen) to shrink each artifact before the size-budget check.
+# binaryen is installed in CI via: sudo apt-get install -y binaryen
 .PHONY: build-wasm
 build-wasm:
 	$(CARGO) build --target $(WASM_TARGET) --release
+	@echo "Running wasm-opt -Oz on release artifacts..."
+	@for wasm in $(RELEASE_WASM_DIR)/*.wasm; do \
+	  echo "  wasm-opt $$wasm"; \
+	  wasm-opt -Oz --output $$wasm $$wasm; \
+	done
+	@echo "wasm-opt pass complete"
 
 # Mirrors: bash scripts/check-wasm-sizes.sh  (requires jq)
 .PHONY: wasm-check
@@ -132,7 +140,10 @@ fmt-check:
 clippy:
 	$(CARGO) clippy --workspace --all-targets
 
-# CI-safe: treats every warning as a hard error
+# CI-safe: treats every warning as a hard error.
+# rustc/clippy version is pinned via `rust-toolchain.toml` (channel = "1.85.0")
+# at the repo's `contract/` root, so this target and CI use a consistent lint
+# baseline; bump that file when the pinned toolchain changes.
 .PHONY: clippy-deny
 clippy-deny:
 	$(CARGO) clippy --workspace --all-targets -- -D warnings

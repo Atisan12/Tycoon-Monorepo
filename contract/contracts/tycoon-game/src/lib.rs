@@ -4,7 +4,7 @@ mod events;
 pub(crate) mod storage;
 mod treasury;
 
-use soroban_sdk::{contract, contractimpl, token, Address, Env, IntoVal, String, Symbol};
+use soroban_sdk::{contract, contractimpl, token, Address, Env, String};
 use storage::{
     get_backend_game_controller, get_owner, get_tyc_token, get_usdc_token, CollectibleInfo, User,
 };
@@ -170,14 +170,18 @@ impl TycoonContract {
 
     /// Mint a 2-TYC registration voucher for a player via the reward system (admin only).
     pub fn admin_mint_registration_voucher(env: Env, player: Address) {
-        Self::require_admin(&env);
+        let admin = Self::require_admin(&env);
+
+        if storage::is_voucher_minted(&env, &player) {
+            panic!("Voucher already minted");
+        }
 
         let reward_system = storage::get_reward_system(&env);
-        let _token_id: u128 = env.invoke_contract(
-            &reward_system,
-            &Symbol::new(&env, "mint_voucher"),
-            soroban_sdk::vec![&env, player.into_val(&env), 2_0000000u128.into_val(&env)],
-        );
+        let reward_client = tycoon_reward_system::TycoonRewardSystemClient::new(&env, &reward_system);
+        let _token_id = reward_client.mint_voucher(&admin, &player, &2_0000000u128);
+
+        storage::set_voucher_minted(&env, &player);
+        events::emit_voucher_minted(&env, &player);
     }
 }
 

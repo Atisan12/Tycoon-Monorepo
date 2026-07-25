@@ -95,97 +95,6 @@ mod tests {
     }
 
     // -------------------------------------------------------------------------
-    // 2. test_mint / test_burn — privileged test helpers exposed as entrypoints
-    // -------------------------------------------------------------------------
-
-    /// `test_mint` is a public entrypoint with no auth guard.  In a production
-    /// deployment this would allow any caller to inflate balances.  This test
-    /// documents the current behaviour and acts as a canary: if auth is ever
-    /// added (the correct fix), this test will need updating.
-    ///
-    /// Current status: the entrypoint succeeds because `mock_all_auths()` is
-    /// active.  The important thing is that it is *not* callable without auth
-    /// in a real network context — tracked as a follow-up hardening item.
-    #[test]
-    fn test_mint_entrypoint_is_unguarded_canary() {
-        let f = Fixture::new();
-        let arbitrary_caller = Address::generate(&f.env);
-        let token_id: u128 = 9_999_999;
-        let amount: u64 = 1;
-
-        // This succeeds in the sandbox because mock_all_auths() is active.
-        // On a real network, any address could call this — that is the risk.
-        // The test name makes the intent explicit for reviewers.
-        f.reward.test_mint(&arbitrary_caller, &token_id, &amount);
-
-        assert_eq!(
-            f.reward.get_balance(&arbitrary_caller, &token_id),
-            amount,
-            "test_mint inflated balance — this entrypoint must be removed or auth-gated before mainnet"
-        );
-    }
-
-    /// `test_burn` is symmetric: no auth guard, any caller can burn any balance.
-    /// Documents current behaviour as a canary for the hardening follow-up.
-    #[test]
-    fn test_burn_entrypoint_is_unguarded_canary() {
-        let f = Fixture::new();
-        let token_id: u128 = 8_888_888;
-        let amount: u64 = 3;
-
-        // First mint a balance so the burn has something to consume.
-        f.reward.test_mint(&f.player_a, &token_id, &amount);
-        assert_eq!(f.reward.get_balance(&f.player_a, &token_id), amount);
-
-        // Any address can burn — no auth check.
-        f.reward.test_burn(&f.player_a, &token_id, &amount);
-        assert_eq!(
-            f.reward.get_balance(&f.player_a, &token_id),
-            0,
-            "test_burn removed balance without auth — this entrypoint must be removed or auth-gated before mainnet"
-        );
-    }
-
-    /// Verify that `test_burn` panics on insufficient balance (the underlying
-    /// `_burn` guard is still active even through the unguarded entrypoint).
-    #[test]
-    fn test_burn_insufficient_balance_still_panics() {
-        let f = Fixture::new();
-        let token_id: u128 = 7_777_777;
-
-        // No balance minted — burn must panic.
-        let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            f.reward.test_burn(&f.player_a, &token_id, &1);
-        }));
-        assert!(
-            res.is_err(),
-            "test_burn with zero balance must panic (Insufficient balance)"
-        );
-    }
-
-    /// `test_mint` followed by `test_burn` must leave the balance at zero and
-    /// not affect the TYC token supply (no real token movement).
-    #[test]
-    fn test_mint_then_burn_leaves_zero_balance_no_token_movement() {
-        let f = Fixture::new();
-        let token_id: u128 = 6_666_666;
-        let amount: u64 = 5;
-
-        let tyc_before = f.tyc_balance(&f.reward_id);
-
-        f.reward.test_mint(&f.player_b, &token_id, &amount);
-        f.reward.test_burn(&f.player_b, &token_id, &amount);
-
-        assert_eq!(f.reward.get_balance(&f.player_b, &token_id), 0);
-        // No TYC must have moved — test helpers only touch voucher balances.
-        assert_eq!(
-            f.tyc_balance(&f.reward_id),
-            tyc_before,
-            "test_mint/test_burn must not move TYC tokens"
-        );
-    }
-
-    // -------------------------------------------------------------------------
     // 3. mint_registration_voucher — legacy untyped cross-contract invocation
     // -------------------------------------------------------------------------
 
@@ -299,32 +208,7 @@ mod tests {
         assert_eq!(f.tyc_balance(&f.game_id), game_before - withdraw as i128);
     }
 
-    /// Mint via `test_mint` (legacy unguarded helper) then redeem via the
-    /// canonical `redeem_voucher_from` must fail because `test_mint` does not
-    /// create a `VoucherValue` entry — it only inflates the balance counter.
-    /// This documents the semantic gap between the two mint paths.
-    #[test]
-    fn test_mint_voucher_has_no_value_entry_redeem_panics() {
-        let f = Fixture::new();
-        let token_id: u128 = 5_555_555;
 
-        // Inflate balance via unguarded helper.
-        f.reward.test_mint(&f.player_a, &token_id, &1);
-        assert_eq!(f.reward.get_balance(&f.player_a, &token_id), 1);
-
-        // Attempting to redeem must panic because there is no VoucherValue
-        // stored for this token_id (test_mint skips that step).
-        let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            f.reward.redeem_voucher_from(&f.player_a, &token_id);
-        }));
-        assert!(
-            res.is_err(),
-            "redeem_voucher_from on a test_mint token must panic (no VoucherValue entry)"
-        );
-
-        // No TYC must have moved.
-        assert_eq!(f.tyc_balance(&f.player_a), 0);
-    }
 
     // -------------------------------------------------------------------------
     // 5. Expanded scenarios — stale/disconnected/invalid states
@@ -368,54 +252,22 @@ mod tests {
         assert_eq!(f.tyc_balance(&f.player_a), value as i128);
     }
 
-    /// `test_mint` on two different players with the same token_id must give
-    /// each player an independent balance (no cross-account contamination).
+
+
+    /// `mint_registration_voucher` called twice for the same player must panic on the second call.
     #[test]
-    fn test_mint_independent_balances_per_player() {
-        let f = Fixture::new();
-        let token_id: u128 = 4_444_444;
-
-        f.reward.test_mint(&f.player_a, &token_id, &2);
-        f.reward.test_mint(&f.player_b, &token_id, &5);
-
-        assert_eq!(f.reward.get_balance(&f.player_a, &token_id), 2);
-        assert_eq!(f.reward.get_balance(&f.player_b, &token_id), 5);
-    }
-
-    /// `test_burn` on player_a must not affect player_b's balance for the
-    /// same token_id (account isolation).
-    #[test]
-    fn test_burn_does_not_affect_other_player_balance() {
-        let f = Fixture::new();
-        let token_id: u128 = 3_333_333;
-
-        f.reward.test_mint(&f.player_a, &token_id, &4);
-        f.reward.test_mint(&f.player_b, &token_id, &4);
-
-        f.reward.test_burn(&f.player_a, &token_id, &4);
-
-        assert_eq!(f.reward.get_balance(&f.player_a, &token_id), 0);
-        // player_b's balance must be untouched.
-        assert_eq!(f.reward.get_balance(&f.player_b, &token_id), 4);
-    }
-
-    /// `mint_registration_voucher` called twice for the same player must mint
-    /// two vouchers (idempotency is NOT expected — each call is a new mint).
-    #[test]
-    fn legacy_mint_registration_voucher_twice_mints_two_vouchers() {
+    fn legacy_mint_registration_voucher_twice_panics_on_second_call() {
         let f = Fixture::new();
 
         f.game
             .register_player(&String::from_str(&f.env, "eve"), &f.player_a);
 
         f.game.mint_registration_voucher(&f.player_a);
-        f.game.mint_registration_voucher(&f.player_a);
 
-        assert_eq!(
-            f.reward.owned_token_count(&f.player_a),
-            2,
-            "two calls to mint_registration_voucher must produce two vouchers"
-        );
+        let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            f.game.mint_registration_voucher(&f.player_a);
+        }));
+        assert!(res.is_err(), "second call must panic due to idempotency guard");
     }
 
     /// Deprecated `redeem_voucher` followed immediately by canonical

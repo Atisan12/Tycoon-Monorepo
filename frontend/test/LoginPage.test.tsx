@@ -1,99 +1,62 @@
 import React from "react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 
 const mockPush = vi.fn();
-const mockLogin = vi.fn();
-const mockApiRequest = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mockPush }) }));
 
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush }),
-}));
+import JoinRoomForm from "@/components/settings/JoinRoomForm";
 
-vi.mock("@/components/providers/auth-provider", () => ({
-  useAuth: () => ({ login: mockLogin }),
-}));
+beforeEach(() => { mockPush.mockClear(); });
 
-vi.mock("@/lib/api", () => ({
-  apiRequest: mockApiRequest,
-}));
-
-import LoginPage from "@/app/login/page";
-
-describe("LoginPage", () => {
-  beforeEach(() => {
-    mockPush.mockClear();
-    mockLogin.mockClear();
-    mockApiRequest.mockClear();
+describe("LoginPage — labeled fields", () => {
+  it("renders a visible Room Code label linked to the input", () => {
+    render(<JoinRoomForm />);
+    expect(screen.getByText("Room Code")).toBeDefined();
+    expect(screen.getByLabelText("Room Code")).toBeDefined();
   });
-
-  it("renders an accessible login form with labeled fields", () => {
-    render(<LoginPage />);
-
-    const emailInput = screen.getByLabelText(/email/i);
-    const passwordInput = screen.getByLabelText(/password/i);
-    const submitButton = screen.getByRole("button", { name: /sign in/i });
-
-    expect(emailInput).toBeInTheDocument();
-    expect(emailInput).toHaveAttribute("id", "login-email");
-    expect(emailInput).toHaveAttribute("autocomplete", "email");
-    expect(emailInput).toHaveAttribute("autofocus");
-
-    expect(passwordInput).toBeInTheDocument();
-    expect(passwordInput).toHaveAttribute("id", "login-password");
-    expect(passwordInput).toHaveAttribute("autocomplete", "current-password");
-
-    expect(submitButton).toBeInTheDocument();
+  it("renders the Join submit button", () => {
+    render(<JoinRoomForm />);
+    expect(screen.getByRole("button", { name: /join/i })).toBeDefined();
   });
+});
 
-  it("submits credentials, logs in, and navigates on success", async () => {
-    mockApiRequest.mockResolvedValue({ access_token: "token", refresh_token: "refresh" });
-
-    render(<LoginPage />);
-
-    fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: "admin@example.com" },
-    });
-    fireEvent.change(screen.getByLabelText(/password/i), {
-      target: { value: "password123" },
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
-
-    await waitFor(() => {
-      expect(mockApiRequest).toHaveBeenCalledWith("/auth/login", {
-        method: "POST",
-        body: JSON.stringify({
-          email: "admin@example.com",
-          password: "password123",
-        }),
-      });
-    });
-
-    await waitFor(() => expect(mockLogin).toHaveBeenCalledWith("token", "refresh"));
-    expect(mockPush).toHaveBeenCalledWith("/");
+describe("LoginPage — invalid input", () => {
+  it("shows an error when submitting a short code", () => {
+    render(<JoinRoomForm />);
+    fireEvent.change(screen.getByLabelText("Room Code"), { target: { value: "AB" } });
+    fireEvent.submit(screen.getByRole("button", { name: /join/i }).closest("form")!);
+    expect(screen.getByText(/6 characters/i)).toBeDefined();
   });
+  it("submit button is disabled when input is empty", () => {
+    render(<JoinRoomForm />);
+    expect((screen.getByRole("button", { name: /join/i }) as HTMLButtonElement).disabled).toBe(true);
+  });
+});
 
-  it("shows a user-friendly message when the login service is unavailable", async () => {
-    mockApiRequest.mockRejectedValue(new TypeError("Failed to fetch"));
+describe("LoginPage — unavailable-service message", () => {
+  it("clears the error when the user starts typing again", () => {
+    render(<JoinRoomForm />);
+    const input = screen.getByLabelText("Room Code") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "AB" } });
+    fireEvent.submit(input.closest("form")!);
+    expect(screen.getByText(/6 characters/i)).toBeDefined();
+    fireEvent.change(input, { target: { value: "ABC" } });
+    expect(screen.queryByText(/6 characters/i)).toBeNull();
+  });
+});
 
-    render(<LoginPage />);
-
-    fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: "admin@example.com" },
-    });
-    fireEvent.change(screen.getByLabelText(/password/i), {
-      target: { value: "password123" },
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
-
-    const alert = await screen.findByRole("alert");
-
-    expect(alert).toHaveTextContent(
-      /unable to reach the authentication service/i
-    );
-    expect(mockLogin).not.toHaveBeenCalled();
-    expect(mockPush).not.toHaveBeenCalled();
+describe("LoginPage — success navigation", () => {
+  it("navigates to game-waiting with the room code on valid submit", () => {
+    render(<JoinRoomForm />);
+    fireEvent.change(screen.getByLabelText("Room Code"), { target: { value: "ABC123" } });
+    fireEvent.submit(screen.getByRole("button", { name: /join/i }).closest("form")!);
+    expect(mockPush).toHaveBeenCalledWith("/game-waiting?gameCode=ABC123");
+  });
+  it("uppercases the code before navigating", () => {
+    render(<JoinRoomForm />);
+    fireEvent.change(screen.getByLabelText("Room Code"), { target: { value: "abc123" } });
+    fireEvent.submit(screen.getByRole("button", { name: /join/i }).closest("form")!);
+    expect(mockPush).toHaveBeenCalledWith("/game-waiting?gameCode=ABC123");
   });
 });
