@@ -24,9 +24,16 @@ function installPerformanceObserverMock(
 describe('useJoinRoomWebVitals', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Mock PerformanceObserver
+    // Ensure PerformanceObserver is always available as a constructor
     if (!window.PerformanceObserver) {
-      window.PerformanceObserver = vi.fn() as any;
+      class MockPerformanceObserver {
+        observe = vi.fn();
+        disconnect = vi.fn();
+        constructor(callback: PerformanceObserverCallback) {
+          // Minimal constructor — allows instanceof and new checks
+        }
+      }
+      window.PerformanceObserver = MockPerformanceObserver as unknown as typeof PerformanceObserver;
     }
   });
 
