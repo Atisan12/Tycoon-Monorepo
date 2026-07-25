@@ -140,7 +140,10 @@ fmt-check:
 clippy:
 	$(CARGO) clippy --workspace --all-targets
 
-# CI-safe: treats every warning as a hard error
+# CI-safe: treats every warning as a hard error.
+# rustc/clippy version is pinned via `rust-toolchain.toml` (channel = "1.85.0")
+# at the repo's `contract/` root, so this target and CI use a consistent lint
+# baseline; bump that file when the pinned toolchain changes.
 .PHONY: clippy-deny
 clippy-deny:
 	$(CARGO) clippy --workspace --all-targets -- -D warnings
