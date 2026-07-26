@@ -21,6 +21,7 @@
 //! | AAC-05  | `admin_grant_boost` | Admin grant does not affect other players | Isolation verified |
 //! | AAC-06  | `admin_grant_boost` | Zero value boost | InvalidValue error |
 //! | AAC-07  | `admin_grant_boost` | Past expiry | InvalidExpiry error |
+//! | AAC-07b | `admin_grant_boost` | Grant with future expiry, advance ledger | Boost excluded once ledger reaches expiry |
 //! | AAC-08  | `admin_grant_boost` | Duplicate ID | DuplicateId error |
 //! | AAC-09  | `admin_grant_boost` | Cap exceeded | CapExceeded error |
 //! | AAC-10  | `admin_grant_boost` | Emits event | AdminBoostGrantedEvent published |
@@ -208,6 +209,33 @@ fn test_admin_grant_boost_past_expiry_panics() {
     set_ledger(&env, 200);
     // expires_at_ledger is in the past
     client.admin_grant_boost(&player, &eb(1, BoostType::Additive, 500, 100));
+}
+
+/// AAC-07b: A boost granted with `expires_at_ledger` strictly greater than
+/// the current ledger is accepted and active; once the ledger advances past
+/// that value the boost must no longer contribute to the player's total.
+#[test]
+fn test_admin_grant_boost_expires_after_ledger_advance() {
+    let env = make_env();
+    let (client, _admin) = setup_initialized(&env);
+    let player = Address::generate(&env);
+
+    set_ledger(&env, 100);
+    // expires_at_ledger (150) > current ledger (100) — must be accepted.
+    client.admin_grant_boost(&player, &eb(1, BoostType::Additive, 500, 150));
+
+    let active = client.get_active_boosts(&player);
+    assert_eq!(active.len(), 1);
+    assert_eq!(client.calculate_total_boost(&player), 500);
+
+    // Advance the ledger past expiry.
+    set_ledger(&env, 150);
+    assert_eq!(
+        client.calculate_total_boost(&player),
+        0,
+        "boost must be excluded once current ledger reaches expires_at_ledger"
+    );
+    assert_eq!(client.get_active_boosts(&player).len(), 0);
 }
 
 #[test]

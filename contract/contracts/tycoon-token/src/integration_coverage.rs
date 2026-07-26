@@ -203,6 +203,14 @@ mod tests {
     // ── Supply conservation ───────────────────────────────────────────────────
 
     /// Total supply is conserved across a series of transfers between players.
+    ///
+    /// Style note (reference-argument precedence): transfer amounts below are
+    /// written `&(share / n)`, never `&share / n`. `client.transfer` takes
+    /// `&i128`, and `&` binds tighter than `/`, so `&share / n` parses as
+    /// `(&share) / n` — dividing a reference by an integer, which either
+    /// fails to compile or (with an auto-deref/op impl) silently divides the
+    /// wrong operand. Always parenthesize the arithmetic before taking its
+    /// reference: `&(expr)`.
     #[test]
     fn supply_conserved_across_transfers() {
         let (e, client, admin) = setup();
