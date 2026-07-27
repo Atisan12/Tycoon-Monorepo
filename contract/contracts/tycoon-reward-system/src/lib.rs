@@ -396,6 +396,15 @@ impl TycoonRewardSystem {
     }
 }
 
+// SW-CON-001 canary: `test_mint`/`test_burn` are unauthenticated balance
+// mutators (Option A of MIGRATION_LEGACY_ENTRYPOINTS.md). The `#[cfg(test)]`
+// on this whole `impl` block is the WASM boundary — it is a compile-time
+// gate, not a runtime check, so these entrypoints are never part of the
+// `#[contractimpl]`-generated exports in a `cargo build --release` artifact
+// and cannot appear in the deployed contract's WASM/ABI. Do not move this
+// impl out of `#[cfg(test)]`, do not add a non-test path to `_mint`/`_burn`,
+// and do not drop the block-level `#[cfg(test)]` in favor of per-fn gates —
+// `#[contractimpl]` must never see these fns outside of test builds.
 #[cfg(test)]
 #[contractimpl]
 impl TycoonRewardSystem {

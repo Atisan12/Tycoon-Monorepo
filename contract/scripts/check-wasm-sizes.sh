@@ -31,17 +31,24 @@ FAILED=0
   echo ""
   echo "Regression threshold: **${THRESHOLD_PCT}%** over committed baseline (deployment cost / rent awareness)."
   echo ""
-  echo "| Contract | Baseline (B) | Current (C) | Δ (C−B) | Max allowed (⌊B×(100+${THRESHOLD_PCT})/100⌋) | Status |"
-  echo "|----------|-------------:|------------:|--------:|----------------------------------------------:|:-------|"
+  echo "| Contract | Baseline (B) | Current (C) | Δ (C−B) | Max allowed (⌊B×(100+${THRESHOLD_PCT})/100⌋) | Status | Justification |"
+  echo "|----------|-------------:|------------:|--------:|----------------------------------------------:|:-------|:---------------|"
 } >"$REPORT"
 
 while IFS= read -r line; do
   name="$(echo "$line" | jq -r '.key')"
   baseline="$(echo "$line" | jq -r '.value.baseline_bytes')"
+  justification="$(echo "$line" | jq -r '.value.justification // empty')"
+  if [[ -z "$justification" ]]; then
+    echo "ERROR: $name has no 'justification' string in wasm-size-budget.json." >&2
+    echo "Every baseline entry must record why it is set where it is — required when bumping a baseline." >&2
+    FAILED=1
+    justification="MISSING"
+  fi
   path="$TARGET/$name"
   if [[ ! -f "$path" ]]; then
     echo "ERROR: expected WASM not found: $path (build release wasm first)"
-    echo "| \`$name\` | $baseline | — | — | — | ❌ missing |" >>"$REPORT"
+    echo "| \`$name\` | $baseline | — | — | — | ❌ missing | $justification |" >>"$REPORT"
     FAILED=1
     continue
   fi
@@ -59,7 +66,7 @@ while IFS= read -r line; do
     FAILED=1
   fi
 
-  echo "| \`$name\` | $baseline | $current | $delta | $max_allowed | $status |" >>"$REPORT"
+  echo "| \`$name\` | $baseline | $current | $delta | $max_allowed | $status | $justification |" >>"$REPORT"
 done < <(jq -c '.contracts | to_entries[]' "$BUDGET")
 
 echo "" >>"$REPORT"
@@ -67,7 +74,9 @@ cat "$REPORT" >>"$SUMMARY"
 
 if [[ "$FAILED" -ne 0 ]]; then
   echo "WASM size regression: one or more contracts exceed baseline + ${THRESHOLD_PCT}%." >&2
-  echo "Intentional increase: update \`contract/ci/wasm-size-budget.json\` in the same PR with justification." >&2
+  echo "Intentional increase: update \`contract/ci/wasm-size-budget.json\` in the same PR, bumping" >&2
+  echo "'baseline_bytes' and replacing 'justification' with why the growth is expected (new feature," >&2
+  echo "SDK bump, etc). A missing or stale justification fails this check." >&2
   exit 1
 fi
 

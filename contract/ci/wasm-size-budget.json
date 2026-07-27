@@ -4,19 +4,24 @@
   "regression_threshold_percent": 3,
   "contracts": {
     "tycoon_boost_system.wasm": {
-      "baseline_bytes": 24960
+      "baseline_bytes": 24960,
+      "justification": "Initial recorded baseline"
     },
     "tycoon_token.wasm": {
-      "baseline_bytes": 20802
+      "baseline_bytes": 20802,
+      "justification": "Initial recorded baseline"
     },
     "tycoon_reward_system.wasm": {
-      "baseline_bytes": 21511
+      "baseline_bytes": 21511,
+      "justification": "Initial recorded baseline"
     },
     "tycoon_game.wasm": {
-      "baseline_bytes": 32114
+      "baseline_bytes": 32114,
+      "justification": "Initial recorded baseline"
     },
     "tycoon_collectibles.wasm": {
-      "baseline_bytes": 32796
+      "baseline_bytes": 32796,
+      "justification": "Initial recorded baseline"
     }
   }
 }
