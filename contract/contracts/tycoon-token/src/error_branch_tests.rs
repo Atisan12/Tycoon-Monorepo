@@ -451,6 +451,62 @@ fn test_metadata_consistency() {
     assert_eq!(decimals1, decimals2, "decimals changed between calls");
 }
 
+/// Snapshot: token metadata values after initialization.
+/// SNAPSHOT: name="Tycoon", symbol="TYC", decimals=18
+#[test]
+fn test_snapshot_token_metadata() {
+    let (e, client, _) = setup();
+
+    // SNAPSHOT: name must be "Tycoon"
+    assert_eq!(
+        client.name(),
+        String::from_str(&e, "Tycoon"),
+        "snapshot: token name"
+    );
+    // SNAPSHOT: symbol must be "TYC"
+    assert_eq!(
+        client.symbol(),
+        String::from_str(&e, "TYC"),
+        "snapshot: token symbol"
+    );
+    // SNAPSHOT: decimals must be 18
+    assert_eq!(client.decimals(), 18, "snapshot: token decimals");
+}
+
+/// Snapshot: contract state after a sequence of mint → transfer → burn.
+/// SNAPSHOT: state after mint+transfer+burn
+#[test]
+fn test_snapshot_state_after_operations() {
+    let (e, client, admin) = setup();
+    let user = Address::generate(&e);
+    let supply_before = client.total_supply();
+
+    // Mint to user
+    let mint_amount: i128 = 5_000_000_000_000_000_000_000;
+    client.mint(&user, &mint_amount);
+    assert_eq!(client.balance(&user), mint_amount, "snapshot: user balance after mint");
+    assert_eq!(client.total_supply(), supply_before + mint_amount, "snapshot: supply after mint");
+
+    // Transfer from admin to user
+    let transfer_amount: i128 = 1_000_000_000_000_000_000_000;
+    client.transfer(&admin, &user, &transfer_amount);
+    let expected_user = mint_amount + transfer_amount;
+    let expected_admin = INITIAL_SUPPLY - transfer_amount;
+    assert_eq!(client.balance(&user), expected_user, "snapshot: user balance after transfer");
+    assert_eq!(client.balance(&admin), expected_admin, "snapshot: admin balance after transfer");
+
+    // Burn from user
+    let burn_amount: i128 = 2_000_000_000_000_000_000_000;
+    client.burn(&user, &burn_amount);
+    let expected_user_final = expected_user - burn_amount;
+    let expected_supply_final = supply_before + mint_amount - burn_amount;
+    assert_eq!(client.balance(&user), expected_user_final, "snapshot: user balance after burn");
+    assert_eq!(client.total_supply(), expected_supply_final, "snapshot: supply after burn");
+
+    // Final snapshot: supply conserved (initial + mint - burn)
+    assert!(client.total_supply() >= INITIAL_SUPPLY, "snapshot: supply never below initial");
+}
+
 /// Balance queries for multiple unknown addresses should all return 0.
 #[test]
 fn test_multiple_unknown_addresses_return_zero() {

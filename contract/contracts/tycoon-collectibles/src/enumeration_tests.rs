@@ -479,3 +479,146 @@ fn test_transfer_partial_balance_keeps_token_in_sender_enumeration() {
     // Bob now owns it
     assert_eq!(client.owned_token_count(&bob), 1);
 }
+
+// ── gas-safe pagination (SW-COL-ENM-001) ──────────────────────────────────────
+
+/// tokens_of_owner_page with page_size=MAX_PAGE_SIZE(100) returns up to 100 tokens.
+#[test]
+fn test_pagination_max_page_size_returns_full_batch() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _) = setup(&env);
+    let user = Address::generate(&env);
+
+    // Mint 150 tokens (IDs 1..=150)
+    for i in 1u128..=150 {
+        client.buy_collectible(&user, &i, &1);
+    }
+
+    // Page 0 with MAX_PAGE_SIZE (100) returns 100 tokens
+    let page0 = client.tokens_of_owner_page(&user, &0, &100).unwrap();
+    assert_eq!(page0.len(), 100, "page 0 must return MAX_PAGE_SIZE tokens");
+
+    // Page 1 returns remaining 50
+    let page1 = client.tokens_of_owner_page(&user, &1, &100).unwrap();
+    assert_eq!(page1.len(), 50, "page 1 must return remaining 50 tokens");
+}
+
+/// tokens_of_owner_page with page_size > MAX_PAGE_SIZE returns error.
+#[test]
+fn test_pagination_page_size_exceeds_max_returns_error() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _) = setup(&env);
+    let user = Address::generate(&env);
+
+    client.buy_collectible(&user, &1, &1);
+
+    let result = client.try_tokens_of_owner_page(&user, &0, &101);
+    assert!(result.is_err(), "page_size > MAX_PAGE_SIZE must return error");
+}
+
+/// tokens_of_owner_page with page_size=0 returns error.
+#[test]
+fn test_pagination_zero_page_size_returns_error() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _) = setup(&env);
+    let user = Address::generate(&env);
+
+    client.buy_collectible(&user, &1, &1);
+
+    let result = client.try_tokens_of_owner_page(&user, &0, &0);
+    assert!(result.is_err(), "page_size=0 must return error");
+}
+
+/// tokens_of_owner_page for an out-of-bounds page returns empty Vec.
+#[test]
+fn test_pagination_out_of_bounds_page_returns_empty() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _) = setup(&env);
+    let user = Address::generate(&env);
+
+    client.buy_collectible(&user, &5, &1);
+
+    // Page 10 is way out of bounds for 1 token
+    let page = client.tokens_of_owner_page(&user, &10, &10).unwrap();
+    assert_eq!(page.len(), 0, "out-of-bounds page must return empty Vec");
+}
+
+/// tokens_of_owner_page for an empty owner returns empty Vec.
+#[test]
+fn test_pagination_empty_owner_returns_empty() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _) = setup(&env);
+    let user = Address::generate(&env);
+
+    let page = client.tokens_of_owner_page(&user, &0, &10).unwrap();
+    assert_eq!(page.len(), 0, "empty owner page must be empty");
+}
+
+/// iterate_owned_tokens with batch_size=MAX_PAGE_SIZE returns full batch.
+#[test]
+fn test_iterate_max_batch_size_returns_full_batch() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _) = setup(&env);
+    let user = Address::generate(&env);
+
+    for i in 1u128..=100 {
+        client.buy_collectible(&user, &i, &1);
+    }
+
+    let (batch, has_more) = client.iterate_owned_tokens(&user, &0, &100);
+    assert_eq!(batch.len(), 100, "batch must contain MAX_PAGE_SIZE tokens");
+    assert!(!has_more, "no more tokens after full batch");
+
+    // Next batch must be empty
+    let (next, more) = client.iterate_owned_tokens(&user, &100, &10);
+    assert_eq!(next.len(), 0, "next batch after full scan must be empty");
+    assert!(!more, "no more after full scan");
+}
+
+/// iterate_owned_tokens correctly reports has_more across page boundaries.
+#[test]
+fn test_iterate_has_more_across_pages() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _) = setup(&env);
+    let user = Address::generate(&env);
+
+    // 10 tokens, batch_size=3 -> 4 iterations expected
+    for i in 1u128..=10 {
+        client.buy_collectible(&user, &i, &1);
+    }
+
+    let mut start = 0u32;
+    let batch_size = 3u32;
+    let mut total_collected = 0u32;
+
+    loop {
+        let (batch, has_more) = client.iterate_owned_tokens(&user, &start, &batch_size);
+        total_collected += batch.len() as u32;
+        if !has_more {
+            break;
+        }
+        start += batch_size;
+    }
+
+    assert_eq!(total_collected, 10, "must collect all 10 tokens across iterations");
+}
+
+/// token_of_owner_by_index on empty owner panics (consistent with existing behavior).
+#[test]
+#[should_panic]
+fn test_token_of_owner_by_index_on_empty_owner_panics() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _) = setup(&env);
+    let user = Address::generate(&env);
+
+    // No tokens owned, index 0 should panic
+    client.token_of_owner_by_index(&user, &0);
+}
