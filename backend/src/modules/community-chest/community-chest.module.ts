@@ -5,6 +5,7 @@ import { CommunityChestService } from './community-chest.service';
 import { CommunityChestController } from './community-chest.controller';
 import { CommunityChestObservabilityService } from './community-chest-observability.service';
 import { CommunityChestObservabilityInterceptor } from './community-chest-observability.interceptor';
+import { RANDOM_PROVIDER, SecureRandomProvider } from '../../common/random-provider';
 
 @Module({
   imports: [TypeOrmModule.forFeature([CommunityChest])],
@@ -12,6 +13,7 @@ import { CommunityChestObservabilityInterceptor } from './community-chest-observ
     CommunityChestService,
     CommunityChestObservabilityService,
     CommunityChestObservabilityInterceptor,
+    { provide: RANDOM_PROVIDER, useClass: SecureRandomProvider },
   ],
   controllers: [CommunityChestController],
   exports: [CommunityChestService, TypeOrmModule, CommunityChestObservabilityService],

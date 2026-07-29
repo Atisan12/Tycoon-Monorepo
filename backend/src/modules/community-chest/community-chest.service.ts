@@ -2,6 +2,7 @@ import {
   Injectable,
   ConflictException,
   InternalServerErrorException,
+  Inject,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -11,13 +12,15 @@ import {
   GetCommunityChestListDto,
   CommunityChestSortBy,
 } from './dto/get-community-chest-list.dto';
-import { secureRandomInt } from '../../common/crypto-secure-random';
+import { RANDOM_PROVIDER, RandomProvider } from '../../common/random-provider';
 
 @Injectable()
 export class CommunityChestService {
   constructor(
     @InjectRepository(CommunityChest)
     private readonly communityChestRepository: Repository<CommunityChest>,
+    @Inject(RANDOM_PROVIDER)
+    private readonly rng: RandomProvider,
   ) {}
 
   async drawCard(): Promise<CommunityChest | null> {
@@ -25,7 +28,7 @@ export class CommunityChestService {
     if (count === 0) {
       return null;
     }
-    const skip = secureRandomInt(count);
+    const skip = this.rng.nextInt(count);
     const rows = await this.communityChestRepository.find({
       order: { id: 'ASC' },
       skip,
