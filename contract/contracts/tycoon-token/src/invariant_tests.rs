@@ -21,6 +21,9 @@
 /// | INV-15 | Only the admin can mint; non-admin callers are rejected |
 /// | INV-16 | `MintEvent` is emitted with correct `to` and `amount` on every mint |
 /// | INV-17 | `BurnEvent` is emitted with correct `from` and `amount` on every burn |
+/// | INV-18 | Self-transfer (`transfer` with `from == to`) is a net-noop: balance and supply unchanged |
+/// | INV-19 | Self-transfer_from (`spender == from == to`) is a net-noop: balance and supply unchanged, allowance consumed |
+/// | INV-20 | `burn_from` reduces allowance by exactly the burn amount (single, sequential, exhaustive) |
 ///
 /// Test names follow the pattern `test_inv_<ID>_<short_description>`.
 use super::*;
@@ -580,4 +583,155 @@ fn test_burn_from_exact_allowance_boundary() {
     client.burn_from(&spender, &admin, &exact);
     assert_eq!(client.allowance(&admin, &spender), 0);
     assert_eq!(client.total_supply(), INITIAL_SUPPLY - exact);
+}
+
+// ── INV-18 ────────────────────────────────────────────────────────────────────
+
+/// INV-18: Self-transfer must leave both balance and total_supply unchanged
+/// (net-noop invariant). The tokens never leave the owner's wallet.
+#[test]
+fn test_inv_18_self_transfer_net_noop() {
+    let (_, client, admin) = setup();
+    let balance_before = client.balance(&admin);
+    let supply_before = client.total_supply();
+
+    let amount: i128 = 500_000_000_000_000_000_000;
+    client.transfer(&admin, &admin, &amount);
+
+    assert_eq!(
+        client.balance(&admin),
+        balance_before,
+        "INV-18: self-transfer must not change balance"
+    );
+    assert_eq!(
+        client.total_supply(),
+        supply_before,
+        "INV-18: self-transfer must not change total supply"
+    );
+}
+
+// ── INV-19 ────────────────────────────────────────────────────────────────────
+
+/// INV-19: Self-transfer_from (spender == from) must leave balance and supply
+/// unchanged. Even though the spender is the same address, the allowance is
+/// consumed by the operation.
+#[test]
+fn test_inv_19_self_transfer_from_net_noop() {
+    let (_, client, admin) = setup();
+    let balance_before = client.balance(&admin);
+    let supply_before = client.total_supply();
+    let allowance_amount: i128 = 1_000_000_000_000_000_000_000;
+
+    // Admin approves themselves as spender (from == spender)
+    client.approve(&admin, &admin, &allowance_amount, &0);
+    assert_eq!(client.allowance(&admin, &admin), allowance_amount);
+
+    // Self-transfer_from: spender=admin, from=admin, to=admin
+    client.transfer_from(&admin, &admin, &admin, &allowance_amount);
+
+    assert_eq!(
+        client.balance(&admin),
+        balance_before,
+        "INV-19: self-transfer_from must not change balance"
+    );
+    assert_eq!(
+        client.total_supply(),
+        supply_before,
+        "INV-19: self-transfer_from must not change total supply"
+    );
+    // Allowance is consumed by the transfer_from
+    assert_eq!(
+        client.allowance(&admin, &admin),
+        0,
+        "INV-19: self-transfer_from consumes allowance"
+    );
+}
+
+// ── INV-20 ────────────────────────────────────────────────────────────────────
+
+/// INV-20: burn_from reduces allowance by exactly the burn amount.
+#[test]
+fn test_inv_20_burn_from_allowance_decrement_exact() {
+    let (_, client, admin) = setup();
+    let spender = Address::generate(&client.env);
+    let allowance_amount: i128 = 1_000_000_000_000_000_000_000;
+    let burn_amount: i128 = 300_000_000_000_000_000_000;
+
+    client.approve(&admin, &spender, &allowance_amount, &0);
+    client.burn_from(&spender, &admin, &burn_amount);
+
+    let remaining = client.allowance(&admin, &spender);
+    assert_eq!(
+        remaining,
+        allowance_amount - burn_amount,
+        "INV-20: allowance must be reduced by exactly the burn amount"
+    );
+    assert_eq!(
+        client.total_supply(),
+        INITIAL_SUPPLY - burn_amount,
+        "INV-20: supply reduced by burn amount"
+    );
+}
+
+/// INV-20b: Sequential burn_from calls decrement allowance cumulatively.
+#[test]
+fn test_inv_20b_burn_from_sequential_decrements() {
+    let (_, client, admin) = setup();
+    let spender = Address::generate(&client.env);
+    let allowance_amount: i128 = 1_000_000_000_000_000_000_000;
+    let burn_chunk: i128 = 200_000_000_000_000_000_000;
+
+    client.approve(&admin, &spender, &allowance_amount, &0);
+
+    // First burn
+    client.burn_from(&spender, &admin, &burn_chunk);
+    assert_eq!(
+        client.allowance(&admin, &spender),
+        allowance_amount - burn_chunk,
+        "INV-20b: allowance after first burn"
+    );
+
+    // Second burn
+    client.burn_from(&spender, &admin, &burn_chunk);
+    assert_eq!(
+        client.allowance(&admin, &spender),
+        allowance_amount - 2 * burn_chunk,
+        "INV-20b: allowance after second burn"
+    );
+
+    // Third burn (exhausts allowance)
+    client.burn_from(&spender, &admin, &burn_chunk);
+    let expected_burned = 3 * burn_chunk;
+    assert_eq!(
+        client.allowance(&admin, &spender),
+        allowance_amount - expected_burned,
+        "INV-20b: allowance after third burn"
+    );
+    assert_eq!(
+        client.total_supply(),
+        INITIAL_SUPPLY - expected_burned,
+        "INV-20b: supply reduced cumulatively"
+    );
+}
+
+/// INV-20c: burn_from with exact allowance leaves allowance at zero.
+#[test]
+fn test_inv_20c_burn_from_exhausts_allowance() {
+    let (_, client, admin) = setup();
+    let spender = Address::generate(&client.env);
+    let allowance_amount: i128 = 500_000_000_000_000_000_000;
+
+    client.approve(&admin, &spender, &allowance_amount, &0);
+    client.burn_from(&spender, &admin, &allowance_amount);
+
+    assert_eq!(
+        client.allowance(&admin, &spender),
+        0,
+        "INV-20c: allowance must be zero after burning full allowance"
+    );
+    assert_eq!(
+        client.total_supply(),
+        INITIAL_SUPPLY - allowance_amount,
+        "INV-20c: supply reduced by full allowance amount"
+    );
 }
