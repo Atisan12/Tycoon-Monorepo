@@ -109,6 +109,26 @@ Webhooks features use feature flags for gradual rollout:
 
 ## Security Considerations
 
+### Signature Verification and Replay-Window
+
+Every inbound webhook is authenticated with an HMAC-SHA256 signature computed over `<timestamp>.<raw-body>`.
+
+| Property | Value |
+|---|---|
+| Algorithm | HMAC-SHA256 |
+| Header – signature | `X-Stripe-Signature` (hex-encoded) |
+| Header – timestamp | `X-Stripe-Timestamp` (Unix seconds) |
+| Replay window | **300 seconds (5 minutes)** |
+| Comparison | `crypto.timingSafeEqual` (constant-time) |
+
+Requests are rejected (HTTP 401) when:
+1. Either header is missing or the raw body is empty.
+2. The timestamp is non-numeric or `|now - timestamp| > 300 s` — this covers both *stale* replays and *future-dated* forgeries.
+3. The signature length does not match the expected HMAC length.
+4. The HMAC values do not match.
+
+All rejections are logged via the observability service and written to the audit log, so failed signature attempts are fully traceable.
+
 ### Secret Management
 - Webhook secrets stored in secure environment variables
 - No secrets logged in application logs

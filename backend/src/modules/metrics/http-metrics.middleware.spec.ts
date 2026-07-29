@@ -1,13 +1,21 @@
 /**
- * SW-BE-028 — HttpMetricsMiddleware: DTO validation and error mapping tests.
+ * SW-BE-025 — HttpMetricsMiddleware: observability tests.
  */
 import { HttpMetricsMiddleware } from './http-metrics.middleware';
 import { HttpMetricsService } from './http-metrics.service';
 import { Request, Response } from 'express';
 import { EventEmitter } from 'events';
+import { ConfigService } from '@nestjs/config';
 
 const mockHttpMetricsService = {
   recordRequest: jest.fn(),
+};
+
+const mockConfigService = {
+  get: jest.fn((key: string, defaultValue?: unknown) => {
+    if (key === 'REQUEST_LOGGING_ENABLED') return true;
+    return defaultValue;
+  }),
 };
 
 function buildReq(path: string, method = 'GET'): Request {
@@ -25,6 +33,7 @@ describe('HttpMetricsMiddleware', () => {
   beforeEach(() => {
     middleware = new HttpMetricsMiddleware(
       mockHttpMetricsService as unknown as HttpMetricsService,
+      mockConfigService as unknown as ConfigService,
     );
     jest.clearAllMocks();
   });
@@ -84,7 +93,9 @@ describe('HttpMetricsMiddleware', () => {
       middleware.use(req, res, next);
       res.emit('finish');
 
-      const duration = (mockHttpMetricsService.recordRequest.mock.calls[0] as unknown[])[3] as number;
+      const duration = (
+        mockHttpMetricsService.recordRequest.mock.calls[0] as unknown[]
+      )[3] as number;
       expect(duration).toBeGreaterThanOrEqual(0);
     });
 

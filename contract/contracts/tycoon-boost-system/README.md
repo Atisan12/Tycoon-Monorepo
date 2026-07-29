@@ -30,11 +30,18 @@ and event emissions for the Tycoon game.
 | Rule | Behaviour |
 |------|-----------|
 | SR-1 | Additive boosts sum their basis-point values before being applied |
-| SR-2 | Multiplicative boosts chain: each multiplies the running total |
+| SR-2 | Multiplicative boosts chain: each multiplies the running total in priority order (descending) |
 | SR-3 | Override boosts: only the one with the highest `priority` applies |
 | SR-4 | Override supersedes all Additive and Multiplicative boosts |
 | SR-5 | When no Override is present: `result = mult_chain × (1 + additive_sum)` |
 | SR-6 | A player with no active boosts returns the base value 10 000 bp |
+| SR-7 | All boost types are processed in descending priority order for deterministic outcomes |
+
+### Priority Ordering Details
+
+- **Multiplicative boosts**: Sorted by priority (descending) before chaining. Higher priority boosts are applied first, maintaining determinism regardless of insertion order.
+- **Additive boosts**: Sorting by priority ensures consistent processing order, though mathematically all additive values sum the same regardless of order.
+- **Override boosts**: Highest priority wins; only one override boost is ever active.
 
 **Formula:**
 ```
@@ -43,6 +50,8 @@ If any Override boost is active:
 
 Else:
   Result = Base(10000) × (Mult₁ × Mult₂ × … / 10000^(n-1)) × (1 + Add₁ + Add₂ + …) / 10000
+  
+  Where Mult and Add sequences are ordered by descending priority.
 ```
 
 ---
@@ -139,9 +148,10 @@ For detailed migration instructions, see [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.
 
 ## Deterministic Outcomes
 - Same input always produces the same output
-- Order of boost application does not matter within the same type
-- Priority resolves conflicts for Override type
+- Order of boost application does not matter: boosts are sorted by priority (descending) before processing
+- Priority resolves conflicts for Override type and determines processing order for all types
 - Expired boosts are consistently excluded based on ledger sequence number
+- Multiplicative and Additive boosts produce the same result regardless of insertion order due to priority-based sorting
 
 ---
 
@@ -151,17 +161,30 @@ For detailed migration instructions, see [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.
 cargo test --package tycoon-boost-system
 ```
 
-### Test Coverage (151 tests total)
+### Test Coverage (191+ tests total)
+### Test Coverage (211+ tests total)
+### Test Coverage (232+ tests total)
 
 Tests are organized across multiple modules:
 - `src/test.rs` — Core stacking behaviour (9 tests)
-- `src/cap_stacking_expiry_tests.rs` — Cap, stacking matrix, expiry, and event tests (31 tests)
+- `src/cap_stacking_expiry_tests.rs` — Cap, stacking matrix, expiry, and event tests (52+ tests) ⭐ Enhanced
 - `src/time_boundary_tests.rs` — Time boundary and ledger sequence tests (11 tests)
-- `src/advanced_integration_tests.rs` — Advanced edge cases, stress tests, and multi-player scenarios (45 tests)
+- `src/advanced_integration_tests.rs` — Advanced edge cases, stress tests, and multi-player scenarios (49 tests) ✨ **Enhanced**
 - `src/deprecation_tests.rs` — Deprecation behavior and migration tests (30 tests)
+- `src/admin_access_control_tests.rs` — Admin authorization and access control tests (40+ tests) ✨ **Enhanced**
+- `src/security_review_tests.rs` — Security checklist verification tests
+- `src/simulation_scenarios.rs` — End-to-end simulation scenarios
+- `src/simulation_scenarios.rs` — End-to-end game session simulations (7 tests)
+- `src/security_review_tests.rs` — Security property verification (4 tests)
 - `../integration-tests/src/boost_system_integration.rs` — Cross-contract integration tests (25 tests)
 
-See [TEST_COVERAGE_IMPROVEMENTS.md](./TEST_COVERAGE_IMPROVEMENTS.md) for comprehensive coverage details.
+See [TEST_COVERAGE_IMPROVEMENTS.md](./TEST_COVERAGE_IMPROVEMENTS.md) and [CAP_STACKING_EXPIRY_TEST_COVERAGE.md](./CAP_STACKING_EXPIRY_TEST_COVERAGE.md) for comprehensive coverage details.
+
+See [ADMIN_ACCESS_CONTROL_TEST_COVERAGE.md](./ADMIN_ACCESS_CONTROL_TEST_COVERAGE.md) for detailed admin access control test documentation (SW-CON-1038).
+
+See [ADVANCED_INTEGRATION_TEST_COVERAGE.md](./ADVANCED_INTEGRATION_TEST_COVERAGE.md) for advanced integration test documentation (SW-CON-1039).
+
+See [ADMIN_ACCESS_CONTROL_TEST_COVERAGE.md](./ADMIN_ACCESS_CONTROL_TEST_COVERAGE.md) for detailed admin access control test documentation (SW-CON-1038).
 
 ### Running Specific Test Suites
 

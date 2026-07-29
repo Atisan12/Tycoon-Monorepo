@@ -1,5 +1,5 @@
 /**
- * SW-BE-028 — route-group: DTO validation and error mapping tests.
+ * SW-BE-025 — route-group: low-cardinality HTTP route classification for metrics.
  */
 import { classifyHttpRouteGroup, httpStatusClass } from './route-group';
 
@@ -72,7 +72,9 @@ describe('classifyHttpRouteGroup', () => {
     });
 
     it('strips query string before classifying admin path', () => {
-      expect(classifyHttpRouteGroup('/api/v1/admin/users?page=1')).toBe('admin');
+      expect(classifyHttpRouteGroup('/api/v1/admin/users?page=1')).toBe(
+        'admin',
+      );
     });
   });
 
@@ -96,7 +98,9 @@ describe('classifyHttpRouteGroup', () => {
     });
 
     it('strips query string before classifying public path', () => {
-      expect(classifyHttpRouteGroup('/api/v1/shop?page=2&limit=10')).toBe('public');
+      expect(classifyHttpRouteGroup('/api/v1/shop?page=2&limit=10')).toBe(
+        'public',
+      );
     });
 
     it('does not misclassify "administrator" as admin segment', () => {

@@ -20,6 +20,7 @@ import { GiftStatus } from '../gifts/enums/gift-status.enum';
 import { RedisService } from '../redis/redis.service';
 import { secureRandomHex } from '../../common/crypto-secure-random';
 import { PaginationService, PaginatedResponse } from '../../common';
+import { MAX_BULK_UPDATE_ITEMS } from './dto/bulk-update-shop-items.dto';
 
 /** @deprecated Use PaginatedResponse<ShopItem> from common instead. */
 export type PaginatedShopItems = PaginatedResponse<ShopItem>;
@@ -86,7 +87,9 @@ export class ShopService {
         .getRepository(UserInventory)
         .find({ where: { user_id: userId } });
 
-      const ownedItemIds = new Set(userInventory.map((inv) => inv.shop_item_id));
+      const ownedItemIds = new Set(
+        userInventory.map((inv) => inv.shop_item_id),
+      );
       paginated.data = paginated.data.map((item) => ({
         ...item,
         is_owned: ownedItemIds.has(item.id),
@@ -150,7 +153,9 @@ export class ShopService {
       payment_method = 'balance',
     } = dto;
 
-    this.logger.log(`Initiating purchaseAndGift: sender ${senderId}, receiver ${receiver_id}, item ${shop_item_id}`);
+    this.logger.log(
+      `Initiating purchaseAndGift: sender ${senderId}, receiver ${receiver_id}, item ${shop_item_id}`,
+    );
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -195,8 +200,12 @@ export class ShopService {
         quantity,
         unit_price: shopItem.price,
         total_price: totalPrice.toFixed(2),
+        original_price: totalPrice.toFixed(2),
+        discount_amount: '0.00',
+        final_price: totalPrice.toFixed(2),
         currency: shopItem.currency,
         payment_method,
+        status: 'completed',
         is_gift: true,
         transaction_id: this.generateTransactionId(),
         metadata: {
@@ -227,7 +236,9 @@ export class ShopService {
       await queryRunner.manager.save(savedPurchase);
 
       await queryRunner.commitTransaction();
-      this.logger.log(`purchaseAndGift successful: purchase ${savedPurchase.id}, gift ${savedGift.id}`);
+      this.logger.log(
+        `purchaseAndGift successful: purchase ${savedPurchase.id}, gift ${savedGift.id}`,
+      );
 
       // 9. TODO: Notify receiver (implement notification service)
       // await this.notificationService.notifyGiftReceived(receiver_id, savedGift);
@@ -267,6 +278,62 @@ export class ShopService {
       .where('purchase.user_id = :userId', { userId });
 
     return this.paginationService.paginate(qb, { page, limit });
+  }
+
+  /**
+   * Bulk update multiple shop items.
+   * Supports updating price and/or active status for multiple items in a single operation.
+   *
+   * Partial-success policy: each item is applied independently. If an item
+   * fails (e.g. not found), it is logged and skipped — it does NOT abort or
+   * roll back the other items in the batch. The response contains only the
+   * items that were updated successfully, so callers must compare the
+   * returned array against the request to detect skipped items.
+   *
+   * Guarded against empty/oversized batches as defense-in-depth; the primary
+   * enforcement is `BulkUpdateShopItemsDto` validation at the HTTP boundary.
+   */
+  async bulkUpdate(
+    updates: Array<{ id: number; price?: number; active?: boolean }>,
+  ): Promise<ShopItem[]> {
+    if (updates.length === 0) {
+      throw new BadRequestException('items must not be empty');
+    }
+    if (updates.length > MAX_BULK_UPDATE_ITEMS) {
+      throw new BadRequestException(
+        `items must not contain more than ${MAX_BULK_UPDATE_ITEMS} elements`,
+      );
+    }
+
+    const updatedItems: ShopItem[] = [];
+
+    for (const update of updates) {
+      try {
+        const item = await this.findOne(update.id);
+
+        if (update.price !== undefined) {
+          item.price = String(update.price);
+        }
+
+        if (update.active !== undefined) {
+          item.active = update.active;
+        }
+
+        const saved = await this.shopItemRepository.save(item);
+        updatedItems.push(saved);
+        this.logger.log(
+          `Bulk updated shop item ${update.id}: ${JSON.stringify(update)}`,
+        );
+        await this.invalidateCache(update.id);
+      } catch (error) {
+        this.logger.error(
+          `Failed to bulk update item ${update.id}: ${error.message}`,
+        );
+        // Continue with other items instead of throwing
+      }
+    }
+
+    return updatedItems;
   }
 
   /**

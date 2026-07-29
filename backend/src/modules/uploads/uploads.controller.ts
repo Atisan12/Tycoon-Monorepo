@@ -20,26 +20,64 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import type { Response } from 'express';
-import { ApiConsumes, ApiBody, ApiTags, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiConsumes,
+  ApiBody,
+  ApiTags,
+  ApiBearerAuth,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { UploadsService, StoredFile } from './uploads.service';
 import { VirusScanService } from './virus-scan.service';
-import { MagicBytesValidator, NoExecutableValidator } from './upload-validators';
+import {
+  MagicBytesValidator,
+  NoExecutableValidator,
+} from './upload-validators';
 import { ConfigService } from '@nestjs/config';
 import { UploadsObservabilityInterceptor } from './uploads-observability.interceptor';
 import { GetSignedUrlDto, DownloadFileDto } from './dto/upload-file.dto';
-import { UploadResponseDto, SignedUrlResponseDto } from './dto/upload-response.dto';
+import {
+  UploadResponseDto,
+  SignedUrlResponseDto,
+} from './dto/upload-response.dto';
 import { UploadValidationPipe } from './pipes/upload-validation.pipe';
 import { UploadExceptionFilter } from './filters/upload-exception.filter';
 import { UploadsErrorMapperService } from './uploads-error-mapper.service';
+import { IdempotencyInterceptor } from './idempotency/idempotency.interceptor';
+import { Idempotent } from './idempotency/idempotency.decorator';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB – also enforced in multer limits below
+
+/** Allowed image MIME types for the multer fileFilter. */
+const ALLOWED_MIME_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+]);
 
 function buildMulterOptions() {
   return {
     storage: memoryStorage(),
     limits: { fileSize: MAX_FILE_SIZE, files: 1 },
+    fileFilter: (
+      _req: unknown,
+      file: { mimetype: string },
+      callback: (error: Error | null, accept: boolean) => void,
+    ) => {
+      if (ALLOWED_MIME_TYPES.has(file.mimetype)) {
+        callback(null, true);
+      } else {
+        callback(
+          new BadRequestException(
+            'File type not permitted. Only JPEG, PNG, GIF, and WebP images are accepted.',
+          ),
+          false,
+        );
+      }
+    },
   };
 }
 
@@ -63,6 +101,8 @@ export class UploadsController {
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @Idempotent()
+  @UseInterceptors(IdempotencyInterceptor)
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -79,6 +119,10 @@ export class UploadsController {
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
     description: 'Invalid file or validation error',
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'Identical upload in-flight (409) or already completed (replayed)',
   })
   @ApiResponse({
     status: HttpStatus.PAYLOAD_TOO_LARGE,
@@ -103,7 +147,11 @@ export class UploadsController {
     @Request() req: { user: { id: number } },
   ): Promise<StoredFile> {
     await this.virusScan.scan(file.buffer, file.originalname);
-    return this.uploadsService.store(file.buffer, file.originalname, file.mimetype);
+    return this.uploadsService.store(
+      file.buffer,
+      file.originalname,
+      file.mimetype,
+    );
   }
 
   /**
@@ -114,6 +162,8 @@ export class UploadsController {
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiBearerAuth()
+  @Idempotent()
+  @UseInterceptors(IdempotencyInterceptor)
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -121,6 +171,19 @@ export class UploadsController {
       properties: { file: { type: 'string', format: 'binary' } },
       required: ['file'],
     },
+  })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Admin asset uploaded successfully',
+    type: UploadResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid file or validation error',
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'Identical upload in-flight (409) or already completed (replayed)',
   })
   @UseInterceptors(FileInterceptor('file', buildMulterOptions()))
   async uploadAdminAsset(
@@ -136,7 +199,11 @@ export class UploadsController {
     file: Express.Multer.File,
   ): Promise<StoredFile> {
     await this.virusScan.scan(file.buffer, file.originalname);
-    return this.uploadsService.store(file.buffer, file.originalname, file.mimetype);
+    return this.uploadsService.store(
+      file.buffer,
+      file.originalname,
+      file.mimetype,
+    );
   }
 
   /**
@@ -156,7 +223,9 @@ export class UploadsController {
     description: 'Invalid or missing key parameter',
   })
   @UsePipes(new UploadValidationPipe(new UploadsErrorMapperService()))
-  async getSignedUrl(@Query() query: GetSignedUrlDto): Promise<{ url: string }> {
+  async getSignedUrl(
+    @Query() query: GetSignedUrlDto,
+  ): Promise<{ url: string }> {
     const url = await this.uploadsService.signedUrl(query.key);
     return { url };
   }

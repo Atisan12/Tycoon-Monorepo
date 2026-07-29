@@ -127,7 +127,9 @@ Issue: SW-CT-004
 | Initialize / metadata | `test_initialization` |
 | Double-init guard | `test_cannot_reinitialize` |
 | Admin mint (positive) | `test_admin_can_mint` |
-| Admin mint (zero rejected) | `test_cannot_mint_zero` |
+| Admin mint (zero rejected) | `test_cannot_mint_zero`, `test_mint_zero_rejected` |
+| Burn (zero rejected) | `test_burn_zero_rejected` |
+| burn_from (zero rejected) | `test_burn_from_zero_rejected` |
 | Transfer (success) | `test_transfer` |
 | Transfer (insufficient balance) | `test_transfer_insufficient_balance` |
 | Approve + transfer_from | `test_approve_and_transfer_from` |
@@ -142,6 +144,7 @@ Issue: SW-CT-004
 | Error branches | `error_branch_tests` module |
 | Access control | `access_control_tests` module |
 | Deprecation guards | `deprecation_tests` module |
+| Simulation scenarios | `simulation_scenarios` module |
 | Security review | `security_review_tests` module |
 
 ---

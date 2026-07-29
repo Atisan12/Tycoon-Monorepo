@@ -1,8 +1,16 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 import withBundleAnalyzer from "@next/bundle-analyzer";
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  // Pin the Turbopack workspace root to this package. Without this, Turbopack
+  // infers the root by walking up for a lockfile and finds candidates at both
+  // the monorepo root (package-lock.json) and here, which silently picks the
+  // wrong root and emits a "Next.js inferred your workspace root" warning.
+  turbopack: {
+    root: path.join(__dirname),
+  },
   transpilePackages: [
     "@near-wallet-selector/core",
     "@near-wallet-selector/modal-ui",

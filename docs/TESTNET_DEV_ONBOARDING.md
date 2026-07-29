@@ -143,7 +143,41 @@ Watch the [Stellar status page](https://status.stellar.org) and the `#dev` chann
 
 ---
 
-## 6. New Dev Checklist
+## 6. Integration Test Isolation Rule (#1359)
+
+All integration tests in `contract/integration-tests/` and in-crate test modules
+**must** use `Env::default()` exclusively. This creates a fully isolated in-process
+Soroban sandbox with no network connection.
+
+**Never** do any of the following in a test:
+- Read `STELLAR_NETWORK`, `STELLAR_RPC_URL`, or any network env var
+- Construct an `Env` from a ledger snapshot tied to a live network
+- Call `stellar contract invoke` against a real RPC from a test binary
+
+The CI workflow has `STELLAR_NETWORK=""` set at the job level to catch accidental
+network references early. If you see `STELLAR_NETWORK is empty` errors in CI,
+the test is attempting a network call that must be replaced with `Env::default()`.
+
+### Pattern to follow
+
+```rust
+#[test]
+fn my_integration_test() {
+    let env = Env::default();   // ← always this; never a network env
+    env.mock_all_auths();
+    // ... test body
+}
+```
+
+### Why this matters
+
+A test that mutates the shared staging contract corrupts state for all
+developers and can break QA sign-off. The sandbox `Env::default()` is
+deterministic, parallel-safe, and runs without any external dependencies.
+
+---
+
+## 7. New Dev Checklist
 
 A new developer can deploy a contract to testnet by following these steps:
 
@@ -155,6 +189,41 @@ A new developer can deploy a contract to testnet by following these steps:
 - [ ] Deploy your own instance: `./scripts/deploy.sh --network testnet --contract tycoon-game --skip-hash`
 - [ ] Verify deployment: `./scripts/verify-deploy.sh --network testnet`
 - [ ] Read the [Deployment Runbook](../contract/DEPLOYMENT_RUNBOOK.md) before touching the shared staging contract
+- [ ] Read Section 8 below on extending contract TTLs
+
+---
+
+## 8. Extending and Bumping Contract TTL (Time-To-Live)
+
+Soroban ledger entries (both contract WASM codes and instance/persistent data entries) have a Time-To-Live (TTL) after which they expire. If they expire, they must be restored before they can be used.
+
+### In CI (GitHub Actions)
+
+In the CI workflow, contract TTLs are automatically bumped as part of the deployment and validation steps. Specifically, the build pipeline runs:
+```bash
+# Extend the WASM code and instance entry TTL
+stellar contract extend --id <YOUR_CONTRACT_ID> --ledgers-to-extend 5356800 --network testnet
+```
+This bumps the TTL to the maximum allowed limit for persistent entries on the testnet (typically around ~3 months, or 5,356,800 ledgers at 5 seconds per ledger).
+
+### Manually via the Stellar CLI
+
+To manually check and extend the TTL of your deployed contract:
+
+1. **Check current TTL / Ledger footprint**:
+   Check when your contract is scheduled to expire by inspecting its ledger entry:
+   ```bash
+   stellar contract inspect --id <YOUR_CONTRACT_ID> --network testnet
+   ```
+
+2. **Extend Contract WASM Code TTL**:
+   ```bash
+   stellar contract extend \
+     --id <YOUR_CONTRACT_ID> \
+     --ledgers-to-extend 500000 \
+     --network testnet \
+     --source dev-<alias>
+   ```
 
 ---
 

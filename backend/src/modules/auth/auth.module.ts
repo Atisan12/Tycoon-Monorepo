@@ -13,6 +13,7 @@ import { RefreshToken } from './entities/refresh-token.entity';
 import { User } from '../users/entities/user.entity';
 import { AdminLogsModule } from '../admin-logs/admin-logs.module';
 import { AuthAuditService } from './audit/auth-audit.service';
+import { AuthObservabilityService } from './auth-observability.service';
 
 @Module({
   imports: [
@@ -29,14 +30,19 @@ import { AuthAuditService } from './audit/auth-audit.service';
           expiresIn: configService.get<number>('jwt.expiresIn') || 900,
         },
         verifyOptions: {
-          clockTolerance:
-            configService.get<number>('jwt.clockTolerance') || 60,
+          clockTolerance: configService.get<number>('jwt.clockTolerance') || 60,
         },
       }),
     }),
   ],
   controllers: [AuthController, AdminAuthController],
-  providers: [AuthService, JwtStrategy, LocalStrategy, AuthAuditService],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    LocalStrategy,
+    AuthAuditService,
+    AuthObservabilityService,
+  ],
   exports: [AuthService, JwtModule, JwtStrategy],
 })
 export class AuthModule {}

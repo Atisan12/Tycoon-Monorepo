@@ -1,4 +1,6 @@
 import {
+  ArrayMaxSize,
+  IsArray,
   IsBoolean,
   IsEnum,
   IsNotEmpty,
@@ -7,6 +9,7 @@ import {
   IsOptional,
   IsPositive,
   IsString,
+  IsUrl,
   Matches,
   MaxLength,
   Min,
@@ -48,7 +51,9 @@ export class CreateShopItemDto {
   })
   @IsOptional()
   @IsString()
-  @Matches(/^[A-Z]{3}$/, { message: 'currency must be a 3-letter ISO 4217 code (e.g. USD)' })
+  @Matches(/^[A-Z]{3}$/, {
+    message: 'currency must be a 3-letter ISO 4217 code (e.g. USD)',
+  })
   currency?: string;
 
   @ApiPropertyOptional({
@@ -79,4 +84,14 @@ export class CreateShopItemDto {
   })
   @IsBoolean()
   active?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Image URLs for the shop item (max 5)',
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(5)
+  @IsUrl({}, { each: true })
+  images?: string[];
 }

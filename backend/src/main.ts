@@ -8,6 +8,7 @@ import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { LoggerService } from './common/logger/logger.service';
 import { configureApiVersioning } from './common/versioning/api-versioning';
+import { isOriginAllowed } from './common/security/cors-origin-validator';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
@@ -118,10 +119,13 @@ async function bootstrap() {
   app.useGlobalFilters(new AllExceptionsFilter(httpAdapterHost, loggerService));
 
   // CORS configuration
-  const corsAllowedOrigins = configService.get<string[]>('app.corsAllowedOrigins') || [];
-  const corsCredentials = configService.get<boolean>('app.corsCredentials') ?? true;
+  const corsAllowedOrigins =
+    configService.get<string[]>('app.corsAllowedOrigins') || [];
+  const corsCredentials =
+    configService.get<boolean>('app.corsCredentials') ?? true;
   const corsMaxAge = configService.get<number>('app.corsMaxAge') || 86400;
-  const corsDevWildcard = configService.get<boolean>('app.corsDevWildcard') ?? true;
+  const corsDevWildcard =
+    configService.get<boolean>('app.corsDevWildcard') ?? true;
   const nodeEnv = configService.get<string>('app.nodeEnv') || 'development';
   const isDevelopment = nodeEnv === 'development';
 
@@ -130,7 +134,7 @@ async function bootstrap() {
     `CORS: ${corsAllowedOrigins.length} allowed origin(s) configured`,
     'Bootstrap',
   );
-  
+
   if (isDevelopment && corsDevWildcard) {
     loggerService.log(
       'CORS: Development wildcard rules enabled (localhost, 127.0.0.1, *.local)',
@@ -147,52 +151,21 @@ async function bootstrap() {
    * Dynamic CORS origin validation function
    * Checks against allowlist and applies wildcard rules in development
    */
-  const corsOriginValidator = (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    // Allow requests with no origin (e.g., mobile apps, Postman, server-to-server)
-    if (!origin) {
-      return callback(null, true);
+  const corsOriginValidator = (
+    origin: string | undefined,
+    callback: (err: Error | null, allow?: boolean) => void,
+  ) => {
+    const allowed = isOriginAllowed(origin, {
+      allowedOrigins: corsAllowedOrigins,
+      isDevelopment,
+      devWildcard: corsDevWildcard,
+    });
+
+    if (!allowed) {
+      loggerService.warn(`CORS: Rejected origin: ${origin}`, 'CORS');
     }
 
-    // Check against explicit allowlist
-    if (corsAllowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-
-    // Apply development wildcard rules
-    if (isDevelopment && corsDevWildcard) {
-      try {
-        const url = new URL(origin);
-        const hostname = url.hostname;
-
-        // Allow localhost (any port)
-        if (hostname === 'localhost') {
-          return callback(null, true);
-        }
-
-        // Allow 127.0.0.1 (any port)
-        if (hostname === '127.0.0.1') {
-          return callback(null, true);
-        }
-
-        // Allow *.local pattern
-        if (hostname.endsWith('.local')) {
-          return callback(null, true);
-        }
-      } catch (err) {
-        // Invalid URL, will be rejected below
-      }
-    }
-
-    // Reject origin and log at WARN level
-    const adapter = app.getHttpAdapter();
-    const request = adapter.getRequestMethod ? undefined : origin; // Get request if available
-    loggerService.warn(
-      `CORS: Rejected origin: ${origin}`,
-      'CORS',
-    );
-
-    // Return false to reject (no CORS headers will be sent)
-    return callback(null, false);
+    return callback(null, allowed);
   };
 
   app.enableCors({

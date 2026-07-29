@@ -123,6 +123,34 @@ The backend uses two primary guards for admin access control:
 
 ---
 
+### 8. Admin Shop Module
+
+**Base Path**: `/admin/shop`  
+**Controller**: `AdminShopController` (`src/modules/shop/admin-shop.controller.ts`)  
+**Guards**: `JwtAuthGuard`, `AdminGuard`
+
+| HTTP Method | Path | Purpose | Guard Used |
+|-------------|------|---------|------------|
+| PATCH | `/admin/shop/:id/price` | Update a shop item's price (ISO 4217 currency, min 0.01) | AdminGuard |
+| PATCH | `/admin/shop/:id/status` | Toggle a shop item's active status | AdminGuard |
+| POST | `/admin/shop/:id/upload` | Upload up to 5 images for a shop item | AdminGuard |
+| POST | `/admin/shop/bulk/update` | Bulk update 1-100 shop items (partial-success — see below) | AdminGuard |
+
+**Note (#1280 — orphan Express tree audit)**: admin shop management was fully migrated
+from an earlier, pre-Nest implementation into `AdminShopController` under `ShopModule`
+(see commit `22adf0d`, #858). This audit re-confirmed there is no remaining
+standalone/orphan Express router, controller, or app instance for shop management
+anywhere in the repository — `AdminShopController` registered in `ShopModule` is the
+single source of truth for these routes, fully covered by
+`admin-shop.controller.spec.ts`.
+
+**Partial-success policy (#1281)**: `POST /admin/shop/bulk/update` requires 1-100 items
+(`400` if empty or over the limit — see `BulkUpdateShopItemsDto`). Each item is applied
+independently; a failure on one item (e.g. unknown id) is logged and skipped rather than
+aborting the batch, so the response may contain fewer items than were requested.
+
+---
+
 ## Guard Implementations
 
 ### AdminGuard
