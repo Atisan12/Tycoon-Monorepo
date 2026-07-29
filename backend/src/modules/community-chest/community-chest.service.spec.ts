@@ -7,10 +7,7 @@ import {
   CommunityChestSortBy,
   SortOrder,
 } from './dto/get-community-chest-list.dto';
-
-jest.mock('../../common/crypto-secure-random', () => ({
-  secureRandomInt: jest.fn(() => 0),
-}));
+import { RANDOM_PROVIDER, SeededRandomProvider } from '../../common/random-provider';
 
 const mockCommunityChest = {
   id: 1,
@@ -67,6 +64,7 @@ describe('CommunityChestService', () => {
             find: mockFind,
           },
         },
+        { provide: RANDOM_PROVIDER, useValue: new SeededRandomProvider(0) },
       ],
     }).compile();
 
@@ -94,6 +92,29 @@ describe('CommunityChestService', () => {
       const result = await service.drawCard();
       expect(result).toBeNull();
       expect(mockFind).not.toHaveBeenCalled();
+    });
+
+    it('drawCard is deterministic for a fixed seed', async () => {
+      // Build two services with the same seed and identical repo state
+      const buildSvc = async (seed: number) => {
+        const mod = await Test.createTestingModule({
+          providers: [
+            CommunityChestService,
+            {
+              provide: getRepositoryToken(CommunityChest),
+              useValue: { count: jest.fn().mockResolvedValue(5), find: jest.fn().mockImplementation(({ skip }: any) => Promise.resolve([{ id: skip + 1 }])) },
+            },
+            { provide: RANDOM_PROVIDER, useValue: new SeededRandomProvider(seed) },
+          ],
+        }).compile();
+        return mod.get<CommunityChestService>(CommunityChestService);
+      };
+
+      const svc1 = await buildSvc(99);
+      const svc2 = await buildSvc(99);
+      const r1 = await svc1.drawCard();
+      const r2 = await svc2.drawCard();
+      expect(r1?.id).toBe(r2?.id);
     });
   });
 

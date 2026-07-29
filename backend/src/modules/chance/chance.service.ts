@@ -1,6 +1,4 @@
-// TODO: add OpenTelemetry tracing when infrastructure is available
-
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Chance } from './entities/chance.entity';
@@ -13,7 +11,7 @@ import {
   MissingRequiredFieldException,
   InvalidChanceTypeException,
 } from './exceptions/chance-exceptions';
-import { secureRandomInt } from '../../common/crypto-secure-random';
+import { RANDOM_PROVIDER, RandomProvider, SecureRandomProvider } from '../../common/random-provider';
 import { ChanceObservabilityService } from './chance-observability.service';
 
 @Injectable()
@@ -22,6 +20,8 @@ export class ChanceService {
     @InjectRepository(Chance)
     private readonly chanceRepository: Repository<Chance>,
     private readonly observability: ChanceObservabilityService,
+    @Inject(RANDOM_PROVIDER)
+    private readonly rng: RandomProvider,
   ) {}
 
   async findAll(page?: number, limit?: number): Promise<Chance[]> {
@@ -61,7 +61,7 @@ export class ChanceService {
       if (count === 0) {
         throw new BadRequestException('No chance cards available');
       }
-      const randomIndex = secureRandomInt(count);
+      const randomIndex = this.rng.nextInt(count);
       const [card] = await this.chanceRepository.find({
         order: { id: 'ASC' },
         skip: randomIndex,
