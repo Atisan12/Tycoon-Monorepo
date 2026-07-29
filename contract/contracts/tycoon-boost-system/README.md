@@ -30,11 +30,18 @@ and event emissions for the Tycoon game.
 | Rule | Behaviour |
 |------|-----------|
 | SR-1 | Additive boosts sum their basis-point values before being applied |
-| SR-2 | Multiplicative boosts chain: each multiplies the running total |
+| SR-2 | Multiplicative boosts chain: each multiplies the running total in priority order (descending) |
 | SR-3 | Override boosts: only the one with the highest `priority` applies |
 | SR-4 | Override supersedes all Additive and Multiplicative boosts |
 | SR-5 | When no Override is present: `result = mult_chain × (1 + additive_sum)` |
 | SR-6 | A player with no active boosts returns the base value 10 000 bp |
+| SR-7 | All boost types are processed in descending priority order for deterministic outcomes |
+
+### Priority Ordering Details
+
+- **Multiplicative boosts**: Sorted by priority (descending) before chaining. Higher priority boosts are applied first, maintaining determinism regardless of insertion order.
+- **Additive boosts**: Sorting by priority ensures consistent processing order, though mathematically all additive values sum the same regardless of order.
+- **Override boosts**: Highest priority wins; only one override boost is ever active.
 
 **Formula:**
 ```
@@ -43,6 +50,8 @@ If any Override boost is active:
 
 Else:
   Result = Base(10000) × (Mult₁ × Mult₂ × … / 10000^(n-1)) × (1 + Add₁ + Add₂ + …) / 10000
+  
+  Where Mult and Add sequences are ordered by descending priority.
 ```
 
 ---
@@ -139,9 +148,10 @@ For detailed migration instructions, see [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.
 
 ## Deterministic Outcomes
 - Same input always produces the same output
-- Order of boost application does not matter within the same type
-- Priority resolves conflicts for Override type
+- Order of boost application does not matter: boosts are sorted by priority (descending) before processing
+- Priority resolves conflicts for Override type and determines processing order for all types
 - Expired boosts are consistently excluded based on ledger sequence number
+- Multiplicative and Additive boosts produce the same result regardless of insertion order due to priority-based sorting
 
 ---
 

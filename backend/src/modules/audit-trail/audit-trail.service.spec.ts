@@ -169,4 +169,60 @@ describe('AuditTrailService', () => {
       });
     });
   });
+
+  describe('exportLogs', () => {
+    it('should return all matching logs without pagination', async () => {
+      const findSpy = jest
+        .spyOn(repository, 'find' as any)
+        .mockResolvedValue([mockAuditTrail] as any);
+
+      const result = await service.exportLogs({
+        userId: 1,
+        action: AuditAction.USER_CREATED,
+      });
+
+      expect(findSpy).toHaveBeenCalledWith({
+        where: { userId: 1, action: AuditAction.USER_CREATED },
+        order: { createdAt: 'DESC' },
+      });
+      expect(result).toEqual([mockAuditTrail]);
+    });
+
+    it('should return all logs when no filter is provided', async () => {
+      const findSpy = jest
+        .spyOn(repository, 'find' as any)
+        .mockResolvedValue([] as any);
+
+      await service.exportLogs({});
+
+      expect(findSpy).toHaveBeenCalledWith({
+        where: {},
+        order: { createdAt: 'DESC' },
+      });
+    });
+  });
+
+  describe('purgeExpiredLogs', () => {
+    it('should delete entries older than the retention window and return count', async () => {
+      const deleteSpy = jest
+        .spyOn(repository, 'delete' as any)
+        .mockResolvedValue({ affected: 5 } as any);
+
+      const deleted = await service.purgeExpiredLogs(90);
+
+      expect(deleted).toBe(5);
+      expect(deleteSpy).toHaveBeenCalledWith({
+        createdAt: expect.objectContaining({ _type: 'lessThan' }),
+      });
+    });
+
+    it('should return 0 when no entries are eligible for purge', async () => {
+      jest
+        .spyOn(repository, 'delete' as any)
+        .mockResolvedValue({ affected: 0 } as any);
+
+      const deleted = await service.purgeExpiredLogs(90);
+      expect(deleted).toBe(0);
+    });
+  });
 });

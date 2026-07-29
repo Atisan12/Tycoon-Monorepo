@@ -479,12 +479,27 @@ impl TycoonBoostSystem {
             return 10000; // Base 100% in basis points
         }
 
+        // Sort boosts by priority (descending) for deterministic processing.
+        // Within each boost type, higher priority is processed first.
+        let mut sorted_boosts: Vec<Boost> = boosts;
+        for i in 0..sorted_boosts.len() {
+            for j in (i + 1)..sorted_boosts.len() {
+                let boost_i = sorted_boosts.get(i).unwrap();
+                let boost_j = sorted_boosts.get(j).unwrap();
+                if boost_j.priority > boost_i.priority {
+                    let temp = boost_i.clone();
+                    sorted_boosts.set(i, boost_j.clone());
+                    sorted_boosts.set(j, temp);
+                }
+            }
+        }
+
         let mut multiplicative_total: u32 = 10000;
         let mut additive_total: u32 = 0;
         let mut override_boost: Option<Boost> = None;
 
-        for i in 0..boosts.len() {
-            let boost = boosts.get(i).unwrap();
+        for i in 0..sorted_boosts.len() {
+            let boost = sorted_boosts.get(i).unwrap();
 
             match boost.boost_type {
                 BoostType::Multiplicative => {
@@ -534,6 +549,9 @@ mod admin_access_control_tests;
 
 #[cfg(test)]
 mod security_review_tests;
+
+#[cfg(test)]
+mod issues_1330_tests;
 
 #[cfg(test)]
 mod simulation_scenarios;

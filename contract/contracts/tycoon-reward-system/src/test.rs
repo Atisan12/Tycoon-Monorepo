@@ -1180,6 +1180,83 @@ fn test_voucher_ids_are_unique() {
     assert_ne!(id2, id3);
 }
 
+// ============================================
+// Tests for set_backend_minter rotate (reward-system contract)
+// Acceptance criteria: old minter rejected after rotate.
+// ============================================
+
+/// After rotating the backend minter, the OLD minter must be rejected.
+#[test]
+fn test_old_minter_rejected_after_rotate() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::generate(&env);
+    let old_minter = Address::generate(&env);
+    let new_minter = Address::generate(&env);
+    let user = Address::generate(&env);
+
+    let tyc_id = env
+        .register_stellar_asset_contract_v2(Address::generate(&env))
+        .address();
+    let usdc_id = env
+        .register_stellar_asset_contract_v2(Address::generate(&env))
+        .address();
+
+    let contract_id = env.register(TycoonRewardSystem, ());
+    let client = TycoonRewardSystemClient::new(&env, &contract_id);
+
+    client.initialize(&admin, &tyc_id, &usdc_id);
+    token::StellarAssetClient::new(&env, &tyc_id).mint(&contract_id, &10_000);
+
+    // Set old minter and verify it can mint
+    client.set_backend_minter(&old_minter);
+    let token_id = client.mint_voucher(&old_minter, &user, &100);
+    assert_eq!(client.get_balance(&user, &token_id), 1);
+
+    // Rotate to new minter
+    client.set_backend_minter(&new_minter);
+    assert_eq!(client.get_backend_minter(), Some(new_minter.clone()));
+
+    // Old minter must now be rejected
+    let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        client.mint_voucher(&old_minter, &user, &100);
+    }));
+    assert!(res.is_err(), "old minter must be rejected after rotate");
+
+    // New minter must succeed
+    let token_id2 = client.mint_voucher(&new_minter, &user, &200);
+    assert_eq!(client.get_balance(&user, &token_id2), 1);
+}
+
+/// set_backend_minter emits a "set_min" event.
+#[test]
+fn test_set_backend_minter_emits_event() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::generate(&env);
+    let minter = Address::generate(&env);
+
+    let tyc_id = env
+        .register_stellar_asset_contract_v2(Address::generate(&env))
+        .address();
+    let usdc_id = env
+        .register_stellar_asset_contract_v2(Address::generate(&env))
+        .address();
+
+    let contract_id = env.register(TycoonRewardSystem, ());
+    let client = TycoonRewardSystemClient::new(&env, &contract_id);
+    client.initialize(&admin, &tyc_id, &usdc_id);
+
+    let events_before = env.events().all().len();
+    client.set_backend_minter(&minter);
+    assert!(
+        env.events().all().len() > events_before,
+        "set_backend_minter must emit an event"
+    );
+}
+
 /// Verify that redeeming a non-existent token_id panics.
 #[test]
 fn test_redeem_nonexistent_token_panics() {

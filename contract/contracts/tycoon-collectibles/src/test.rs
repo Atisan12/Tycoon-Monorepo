@@ -2665,3 +2665,16 @@ fn test_burn_collectible_for_perk_new_perks() {
         );
     }
 }
+
+#[test]
+#[should_panic]
+fn test_buy_collectible_requires_admin_auth() {
+    let env = Env::default();
+    let contract_id = env.register(TycoonCollectibles, ());
+    let client = TycoonCollectiblesClient::new(&env, &contract_id);
+    let admin = Address::generate(&env);
+    let user = Address::generate(&env);
+    client.initialize(&admin);
+
+    client.buy_collectible(&user, &1, &10);
+}

@@ -537,3 +537,53 @@ describe("NearWalletProvider (context stub)", () => {
     expect(screen.getByTestId("accountId").textContent).toBe("alice.testnet");
   });
 });
+
+// ── ToastProvider ──────────────────────────────────────────────────────────────
+
+describe("ToastProvider", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("renders toast container with theme support", () => {
+    render(
+      <ThemeProvider>
+        <ToastProvider />
+      </ThemeProvider>
+    );
+    expect(screen.getByTestId("toast-container")).toBeInTheDocument();
+  });
+
+  it("renders live region for screen reader announcements", () => {
+    render(
+      <ThemeProvider>
+        <ToastProvider />
+      </ThemeProvider>
+    );
+    const liveRegion = screen.getByRole("region", { hidden: true });
+    expect(liveRegion).toHaveAttribute("aria-live", "polite");
+    expect(liveRegion).toHaveAttribute("aria-atomic", "true");
+  });
+
+  it("catches errors and renders fallback without crashing tree", () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    function ThrowingChild() {
+      throw new Error("Test error");
+    }
+
+    // The error boundary should catch the error and render fallback
+    const { container } = render(
+      <ThemeProvider>
+        <ToastProvider />
+        <ThrowingChild />
+      </ThemeProvider>
+    );
+
+    // Toast provider should still be in the DOM even though ThrowingChild threw
+    const liveRegion = screen.getByRole("region", { hidden: true });
+    expect(liveRegion).toBeInTheDocument();
+
+    consoleSpy.mockRestore();
+  });
+});

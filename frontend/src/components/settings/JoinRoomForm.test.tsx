@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import JoinRoomForm from "./JoinRoomForm";
+import { JOIN_ROOM_STORAGE_KEY } from "@/lib/join-room/storage";
 
 const pushMock = vi.fn();
 
@@ -16,7 +17,7 @@ describe("JoinRoomForm", () => {
   });
 
   it("loads a saved room code from sessionStorage", () => {
-    sessionStorage.setItem("tycoon.lastJoinCode", "ABC123");
+    sessionStorage.setItem(JOIN_ROOM_STORAGE_KEY, "ABC123");
     render(<JoinRoomForm />);
 
     expect(screen.getByDisplayValue("ABC123")).toBeInTheDocument();
@@ -44,6 +45,6 @@ describe("JoinRoomForm", () => {
     await userEvent.click(button);
 
     expect(pushMock).toHaveBeenCalledWith("/game-waiting?gameCode=ABC123");
-    expect(sessionStorage.getItem("tycoon.lastJoinCode")).toBe("ABC123");
+    expect(sessionStorage.getItem(JOIN_ROOM_STORAGE_KEY)).toBe("ABC123");
   });
 });

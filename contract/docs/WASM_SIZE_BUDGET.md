@@ -30,11 +30,32 @@ One entry per deployable `cdylib` artifact under `target/wasm32-unknown-unknown/
 
 `tycoon-lib` is a shared **library** crate only (no WASM). Integration tests do not emit WASM.
 
+## Dependencies
+
+| Tool | Package | Purpose |
+|------|---------|--------|
+| `wasm-opt` | `binaryen` (apt) | Runs `-Oz` size-optimisation pass on every release WASM artifact after `cargo build`. Shrinks bytecode before the size-budget check and before on-chain deployment, reducing Soroban storage rent. |
+| `jq` | `jq` (apt, pre-installed on `ubuntu-latest`) | Parses `wasm-size-budget.json` in `check-wasm-sizes.sh`. |
+
+In CI (`contract-ci.yml`) binaryen is installed with:
+```bash
+sudo apt-get install -y binaryen
+```
+The `Verify wasm-opt presence` step immediately after confirms the binary is on `PATH` and prints its version.
+
+Locally, install binaryen via your package manager:
+```bash
+# macOS
+brew install binaryen
+# Ubuntu/Debian
+sudo apt-get install -y binaryen
+```
+
 ## Local check
 
 ```bash
 cd contract
-cargo build --target wasm32-unknown-unknown --release
+cargo build --target wasm32-unknown-unknown --release   # also runs wasm-opt -Oz
 ./scripts/check-wasm-sizes.sh
 ```
 

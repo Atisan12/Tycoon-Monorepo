@@ -38,6 +38,9 @@ export class ShopItem {
   @Column({ type: 'varchar', length: 10, default: 'USD' })
   currency: string;
 
+  @Column({ type: 'jsonb', nullable: true })
+  images: string[] | null;
+
   @Column({ type: 'json', nullable: true })
   metadata: Record<string, unknown>;
 
