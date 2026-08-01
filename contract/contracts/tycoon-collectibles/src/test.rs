@@ -705,37 +705,21 @@ fn test_pause_unpause_functionality() {
 
     client.initialize(&admin);
 
-    // Initially not paused
+    // Initially not paused — set up inventory before pausing
     assert!(!client.is_contract_paused());
-
-    // Pause
-    client.set_pause(&true);
-    assert!(client.is_contract_paused());
-
-    // Buy collectible and set perk
     client.buy_collectible(&user, &1, &1);
     client.set_token_perk(&1, &Perk::CashTiered, &3);
 
-    // Cannot burn while paused
-    let result = client.try_burn_collectible_for_perk(&user, &1);
-    assert!(result.is_err());
-
-    // Unpause
-    client.set_pause(&false);
-    assert!(!client.is_contract_paused());
-    assert!(!client.is_contract_paused());
-
-    // Pause
+    // Pause blocks burn
     client.set_pause(&true);
     assert!(client.is_contract_paused());
+    let result = client.try_burn_collectible_for_perk(&user, &1);
+    assert!(result.is_err());
+    assert_eq!(client.balance_of(&user, &1), 1);
 
-    //...
-
-    // Unpause
+    // Unpause restores burn
     client.set_pause(&false);
     assert!(!client.is_contract_paused());
-
-    // Now can burn
     client.burn_collectible_for_perk(&user, &1);
     assert_eq!(client.balance_of(&user, &1), 0);
 }
