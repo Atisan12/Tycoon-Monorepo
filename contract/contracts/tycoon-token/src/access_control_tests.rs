@@ -244,14 +244,14 @@ fn token_holder_can_approve_and_transfer_from() {
     let spender = Address::generate(&e);
     let recipient = Address::generate(&e);
     client.initialize(&admin, &SUPPLY);
-    
+
     // Admin gives owner some tokens
     client.transfer(&admin, &owner, &1000);
-    
+
     // Owner approves spender
     client.approve(&owner, &spender, &500, &100);
     assert_eq!(client.allowance(&owner, &spender), 500);
-    
+
     // Spender transfers from owner
     client.transfer_from(&spender, &owner, &recipient, &200);
     assert_eq!(client.balance(&recipient), 200);
@@ -268,10 +268,10 @@ fn token_holder_can_burn() {
     let admin = Address::generate(&e);
     let user = Address::generate(&e);
     client.initialize(&admin, &SUPPLY);
-    
+
     client.transfer(&admin, &user, &1000);
     client.burn(&user, &200);
-    
+
     assert_eq!(client.balance(&user), 800);
     assert_eq!(client.total_supply(), SUPPLY - 200);
 }
@@ -286,11 +286,11 @@ fn approved_spender_can_burn_from() {
     let owner = Address::generate(&e);
     let spender = Address::generate(&e);
     client.initialize(&admin, &SUPPLY);
-    
+
     client.transfer(&admin, &owner, &1000);
     client.approve(&owner, &spender, &500, &100);
     client.burn_from(&spender, &owner, &200);
-    
+
     assert_eq!(client.balance(&owner), 800);
     assert_eq!(client.allowance(&owner, &spender), 300);
     assert_eq!(client.total_supply(), SUPPLY - 200);

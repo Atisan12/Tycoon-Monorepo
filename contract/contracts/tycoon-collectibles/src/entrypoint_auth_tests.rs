@@ -117,7 +117,9 @@ fn test_set_token_perk_rejects_without_auth() {
     let token_id = client.stock_shop(&1, &3, &0, &0, &0);
     env.mock_auths(&[]);
     let c = TycoonCollectiblesClient::new(&env, &id);
-    assert!(c.try_set_token_perk(&token_id, &Perk::ExtraTurn, &0).is_err());
+    assert!(c
+        .try_set_token_perk(&token_id, &Perk::ExtraTurn, &0)
+        .is_err());
 }
 
 #[test]

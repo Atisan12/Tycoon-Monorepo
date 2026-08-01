@@ -434,5 +434,5 @@ mod simulation_scenarios;
 
 #[cfg(test)]
 mod gas_snapshot_tests;
-mod security_checklist;
 mod integration_coverage;
+mod security_checklist;

@@ -144,7 +144,7 @@ mod tests {
             address: &attacker,
             invoke: &soroban_sdk::testutils::MockAuthInvoke {
                 contract: &contract_id,
-                fn_name: "withdraw_funds",
+                fn_name: "admin_withdraw_funds",
                 args: soroban_sdk::vec![
                     &env,
                     token.clone().into_val(&env),
@@ -155,7 +155,7 @@ mod tests {
             },
         }]);
         let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            client.withdraw_funds(&token, &attacker, &1_000_000_000_000_000_000u128);
+            client.admin_withdraw_funds(&token, &attacker, &1_000_000_000_000_000_000u128);
         }));
         assert!(
             res.is_err(),

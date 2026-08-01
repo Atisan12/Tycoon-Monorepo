@@ -454,10 +454,10 @@ fn test_clear_boosts_non_admin_fails() {
 fn test_admin_view_no_auth_required() {
     let env = make_env();
     let (client, admin) = setup_initialized(&env);
-    
+
     // Clear all auth mocks — read-only calls must succeed
     env.mock_auths(&[]);
-    
+
     assert_eq!(client.admin(), admin);
 }
 
@@ -592,7 +592,7 @@ fn test_failed_admin_grant_no_partial_state() {
     }));
 
     assert!(res.is_err());
-    
+
     // State should still be intact with only the first boost
     let active = client.get_active_boosts(&player);
     assert_eq!(active.len(), 1);
@@ -644,13 +644,14 @@ fn test_non_admin_grant_no_state_change() {
 fn test_admin_manages_multiple_players() {
     let env = make_env();
     let (client, _admin) = setup_initialized(&env);
-    let players: std::vec::Vec<Address> = (0..5)
-        .map(|_| Address::generate(&env))
-        .collect();
+    let players: std::vec::Vec<Address> = (0..5).map(|_| Address::generate(&env)).collect();
 
     // Grant boosts to all players
     for (i, player) in players.iter().enumerate() {
-        client.admin_grant_boost(player, &nb(i as u128, BoostType::Additive, 100 * (i as u32 + 1)));
+        client.admin_grant_boost(
+            player,
+            &nb(i as u128, BoostType::Additive, 100 * (i as u32 + 1)),
+        );
     }
 
     // Verify all players have their boosts
@@ -707,7 +708,7 @@ fn test_calculate_total_boost_mixed_admin_and_regular() {
 
     // Admin grants additive boost
     client.admin_grant_boost(&player, &nb(1, BoostType::Additive, 2000)); // +20%
-    // Admin adds multiplicative boost via add_boost
+                                                                          // Admin adds multiplicative boost via add_boost
     client.add_boost(&player, &nb(2, BoostType::Multiplicative, 15000)); // 1.5x
 
     // Expected: base 10000 * 1.5 (multiplicative) * (1 + 0.2) (additive) = 18000
@@ -758,7 +759,7 @@ fn test_admin_functions_work_after_admin_change() {
     let contract_id = env.register(TycoonBoostSystem, ());
     let client = TycoonBoostSystemClient::new(&env, &contract_id);
     let old_admin = Address::generate(&env);
-    let new_admin = Address::generate(&env);
+    let _new_admin = Address::generate(&env);
     let player = Address::generate(&env);
 
     env.mock_all_auths();
@@ -769,7 +770,7 @@ fn test_admin_functions_work_after_admin_change() {
     // Note: The current implementation doesn't have set_admin function
     // This test documents the expected behavior if it were added
     // For now, admin is immutable after initialization
-    
+
     assert_eq!(client.get_active_boosts(&player).len(), 1);
 }
 
@@ -800,7 +801,10 @@ fn test_admin_grant_exactly_at_cap() {
         client.admin_grant_boost(&player, &nb(i as u128, BoostType::Additive, 100));
     }
 
-    assert_eq!(client.get_active_boosts(&player).len(), MAX_BOOSTS_PER_PLAYER as usize);
+    assert_eq!(
+        client.get_active_boosts(&player).len(),
+        MAX_BOOSTS_PER_PLAYER
+    );
 }
 
 /// Test that admin_revoke_boost allows re-adding the same ID
@@ -812,7 +816,7 @@ fn test_admin_revoke_allows_readd_same_id() {
 
     client.admin_grant_boost(&player, &nb(1, BoostType::Additive, 500));
     client.admin_revoke_boost(&player, &1);
-    
+
     // Should be able to re-add with same ID
     client.admin_grant_boost(&player, &nb(1, BoostType::Additive, 1000));
 

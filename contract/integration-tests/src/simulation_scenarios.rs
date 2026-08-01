@@ -184,7 +184,7 @@ mod tests {
         assert_eq!(before.state_version, 1);
 
         // migrate() on v1 is a documented no-op — must not panic
-        f.game.migrate();
+        f.game.admin_migrate();
 
         let after = f.game.export_state();
         assert_eq!(
@@ -492,7 +492,7 @@ mod tests {
         let game_before = f.tyc_balance(&f.game_id);
         let admin_before = f.tyc_balance(&f.admin);
 
-        f.game.withdraw_funds(&f.tyc_id, &f.admin, &amount);
+        f.game.admin_withdraw_funds(&f.tyc_id, &f.admin, &amount);
 
         assert_eq!(f.tyc_balance(&f.game_id), game_before - amount as i128);
         assert_eq!(f.tyc_balance(&f.admin), admin_before + amount as i128);

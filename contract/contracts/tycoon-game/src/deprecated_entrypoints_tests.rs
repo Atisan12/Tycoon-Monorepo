@@ -31,18 +31,15 @@ mod tests {
 
     use crate::{TycoonContract, TycoonContractClient};
     use soroban_sdk::{
-        testutils::{Address as _, Events, MockAuth, MockAuthInvoke},
-        token::{StellarAssetClient, TokenClient},
+        testutils::{Address as _, MockAuth, MockAuthInvoke},
         Address, Env, IntoVal,
     };
 
     // ── helpers ───────────────────────────────────────────────────────────────
 
-    fn create_token_contract<'a>(env: &Env, admin: &Address) -> (Address, TokenClient<'a>) {
-        let token_contract = env.register_stellar_asset_contract_v2(admin.clone());
-        let token_address = token_contract.address();
-        let token_client = TokenClient::new(env, &token_address);
-        (token_address, token_client)
+    fn create_token_contract(env: &Env, admin: &Address) -> Address {
+        env.register_stellar_asset_contract_v2(admin.clone())
+            .address()
     }
 
     fn setup(env: &Env) -> (Address, TycoonContractClient<'_>, Address, Address, Address) {
@@ -51,58 +48,15 @@ mod tests {
         let owner = Address::generate(env);
         let tyc_admin = Address::generate(env);
         let usdc_admin = Address::generate(env);
-        let (tyc_id, _) = create_token_contract(env, &tyc_admin);
-        let (usdc_id, _) = create_token_contract(env, &usdc_admin);
+        let tyc_id = create_token_contract(env, &tyc_admin);
+        let usdc_id = create_token_contract(env, &usdc_admin);
         let reward = Address::generate(env);
         client.initialize(&tyc_id, &usdc_id, &owner, &reward);
         (contract_id, client, owner, tyc_id, usdc_id)
     }
 
-    // ── DEP-01: migrate shim delegates to admin_migrate ──────────────────────
-
-    /// DEP-01: `migrate` at v1 (post-initialize) is a no-op and must not panic.
-    #[test]
-    fn dep_01_migrate_shim_is_noop_at_v1() {
-        let env = Env::default();
-        env.mock_all_auths();
-        let (_, client, _, _, _) = setup(&env);
-
-        client.migrate();
-
-        assert_eq!(
-            client.export_state().state_version,
-            1,
-            "DEP-01: state_version must remain 1 after migrate no-op"
-        );
-    }
-
-    // ── DEP-02: withdraw_funds shim transfers tokens ──────────────────────────
-
-    /// DEP-02: `withdraw_funds` shim transfers the requested amount and emits
-    /// a `FundsWithdrawn` event, identical to `admin_withdraw_funds`.
-    #[test]
-    fn dep_02_withdraw_funds_shim_transfers_tokens() {
-        let env = Env::default();
-        env.mock_all_auths();
-        let (contract_id, client, _, tyc_id, _) = setup(&env);
-
-        StellarAssetClient::new(&env, &tyc_id).mint(&contract_id, &1_000);
-        let recipient = Address::generate(&env);
-
-        client.withdraw_funds(&tyc_id, &recipient, &400);
-
-        assert_eq!(
-            soroban_sdk::token::TokenClient::new(&env, &tyc_id).balance(&recipient),
-            400,
-            "DEP-02: recipient must receive the withdrawn amount"
-        );
-        assert_eq!(
-            soroban_sdk::token::TokenClient::new(&env, &tyc_id).balance(&contract_id),
-            600,
-            "DEP-02: contract balance must decrease by withdrawn amount"
-        );
-        // Verification of event is handled in canonical tests.
-    }
+    // ── DEP-01 / DEP-02 removed: migrate & withdraw_funds shims dropped to
+    // avoid WASM symbol collisions with tycoon-reward-system when linked.
 
     // ── DEP-03: set_collectible_info shim stores metadata ────────────────────
 
@@ -188,32 +142,7 @@ mod tests {
     }
 
     // ── DEP-07 through DEP-11: shims still enforce admin-only access ──────────
-
-    /// DEP-07: `withdraw_funds` shim must reject a non-owner caller.
-    #[test]
-    #[should_panic]
-    fn dep_07_withdraw_funds_shim_rejects_non_owner() {
-        let env = Env::default();
-        env.mock_all_auths();
-        let (contract_id, client, _owner, tyc_id, _) = setup(&env);
-
-        StellarAssetClient::new(&env, &tyc_id).mint(&contract_id, &1_000);
-
-        let attacker = Address::generate(&env);
-        let recipient = Address::generate(&env);
-
-        env.mock_auths(&[MockAuth {
-            address: &attacker,
-            invoke: &MockAuthInvoke {
-                contract: &contract_id,
-                fn_name: "withdraw_funds",
-                args: (&tyc_id, &recipient, 500_u128).into_val(&env),
-                sub_invokes: &[],
-            },
-        }]);
-
-        client.withdraw_funds(&tyc_id, &recipient, &500);
-    }
+    // DEP-07 / DEP-11 removed with migrate & withdraw_funds shims.
 
     /// DEP-08: `set_collectible_info` shim must reject a non-owner caller.
     #[test]
@@ -285,29 +214,6 @@ mod tests {
         client.set_backend_game_controller(&new_controller);
     }
 
-    /// DEP-11: `migrate` shim must reject a non-owner caller.
-    #[test]
-    #[should_panic]
-    fn dep_11_migrate_shim_rejects_non_owner() {
-        let env = Env::default();
-        env.mock_all_auths();
-        let (contract_id, client, _owner, _, _) = setup(&env);
-
-        let attacker = Address::generate(&env);
-
-        env.mock_auths(&[MockAuth {
-            address: &attacker,
-            invoke: &MockAuthInvoke {
-                contract: &contract_id,
-                fn_name: "migrate",
-                args: ().into_val(&env),
-                sub_invokes: &[],
-            },
-        }]);
-
-        client.migrate();
-    }
-
     #[test]
     fn test_admin_mint_registration_voucher_idempotency() {
         let env = Env::default();
@@ -322,8 +228,12 @@ mod tests {
         let reward_id = env.register(tycoon_reward_system::TycoonRewardSystem, ());
         let reward_client = tycoon_reward_system::TycoonRewardSystemClient::new(&env, &reward_id);
 
-        let tyc_id = env.register_stellar_asset_contract_v2(Address::generate(&env)).address();
-        let usdc_id = env.register_stellar_asset_contract_v2(Address::generate(&env)).address();
+        let tyc_id = env
+            .register_stellar_asset_contract_v2(Address::generate(&env))
+            .address();
+        let usdc_id = env
+            .register_stellar_asset_contract_v2(Address::generate(&env))
+            .address();
 
         reward_client.initialize(&admin, &tyc_id, &usdc_id);
         game_client.initialize(&tyc_id, &usdc_id, &admin, &reward_id);

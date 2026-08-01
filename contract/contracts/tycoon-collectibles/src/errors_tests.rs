@@ -1,4 +1,3 @@
-#![cfg(test)]
 //! SW-CT-ERR-001: Error-variant coverage tests for tycoon-collectibles errors.rs
 //!
 //! Every variant of `CollectibleError` is exercised by driving the contract

@@ -170,7 +170,11 @@ mod tests {
 
         // Each user holds exactly 1 of their own token; 0 of all others
         for (i, (user, &tid)) in users.iter().zip(token_ids.iter()).enumerate() {
-            assert_eq!(client.get_balance(user, &tid), 1, "user {i}: balance must be 1");
+            assert_eq!(
+                client.get_balance(user, &tid),
+                1,
+                "user {i}: balance must be 1"
+            );
             assert_eq!(
                 client.owned_token_count(user),
                 1,

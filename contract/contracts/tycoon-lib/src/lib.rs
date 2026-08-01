@@ -277,15 +277,15 @@ mod tests {
     #[test]
     fn test_types_can_be_cloned() {
         let status = GameStatus::Ongoing;
-        let status_clone = status.clone();
+        let status_clone = status;
         assert_eq!(status, status_clone);
 
         let game_type = GameType::PrivateGame;
-        let game_type_clone = game_type.clone();
+        let game_type_clone = game_type;
         assert_eq!(game_type, game_type_clone);
 
         let symbol = PlayerSymbol::Battleship;
-        let symbol_clone = symbol.clone();
+        let symbol_clone = symbol;
         assert_eq!(symbol, symbol_clone);
     }
 

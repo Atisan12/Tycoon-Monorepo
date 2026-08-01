@@ -31,13 +31,13 @@ pub enum DataKey {
     TycToken,
     UsdcToken,
     IsInitialized,
-    Collectible(u128),     // token_id -> CollectibleInfo
-    CashTier(u32),         // tier -> value
-    User(Address),         // address -> User
-    Registered(Address),   // address -> bool
-    RewardSystem,          // reward system contract address
-    BackendGameController, // backend game controller address
-    StateVersion,          // u32 version of the state schema
+    Collectible(u128),      // token_id -> CollectibleInfo
+    CashTier(u32),          // tier -> value
+    User(Address),          // address -> User
+    Registered(Address),    // address -> bool
+    RewardSystem,           // reward system contract address
+    BackendGameController,  // backend game controller address
+    StateVersion,           // u32 version of the state schema
     VoucherMinted(Address), // address -> bool
 }
 

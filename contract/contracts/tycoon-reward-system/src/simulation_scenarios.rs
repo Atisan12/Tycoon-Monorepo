@@ -648,8 +648,12 @@ fn sim_s14_multi_season_with_migration() {
     let player_s1_a = Address::generate(&sim.env);
     let player_s1_b = Address::generate(&sim.env);
 
-    let tid_a = sim.client.mint_voucher(&sim.backend, &player_s1_a, &TIER_BRONZE);
-    let tid_b = sim.client.mint_voucher(&sim.backend, &player_s1_b, &TIER_SILVER);
+    let tid_a = sim
+        .client
+        .mint_voucher(&sim.backend, &player_s1_a, &TIER_BRONZE);
+    let tid_b = sim
+        .client
+        .mint_voucher(&sim.backend, &player_s1_b, &TIER_SILVER);
     sim.client.redeem_voucher_from(&player_s1_a, &tid_a);
     sim.client.redeem_voucher_from(&player_s1_b, &tid_b);
 
@@ -658,7 +662,9 @@ fn sim_s14_multi_season_with_migration() {
 
     // Season 2: new players receive new voucher IDs (no recycling)
     let player_s2 = Address::generate(&sim.env);
-    let tid_s2 = sim.client.mint_voucher(&sim.backend, &player_s2, &TIER_GOLD);
+    let tid_s2 = sim
+        .client
+        .mint_voucher(&sim.backend, &player_s2, &TIER_GOLD);
 
     // Season 2 ID must be strictly greater than Season 1 IDs
     assert!(tid_s2 > tid_b, "Season 2 voucher IDs must not be recycled");

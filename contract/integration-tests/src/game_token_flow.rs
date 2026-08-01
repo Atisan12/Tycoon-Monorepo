@@ -32,7 +32,7 @@ mod tests {
         let f = Fixture::new();
         let recipient = Address::generate(&f.env);
         let amount: u128 = 1_000_000_000_000_000_000_000;
-        f.game.withdraw_funds(&f.tyc_id, &recipient, &amount);
+        f.game.admin_withdraw_funds(&f.tyc_id, &recipient, &amount);
         assert_eq!(f.tyc_balance(&recipient), amount as i128);
         assert_eq!(f.tyc_balance(&f.game_id), GAME_FUND - amount as i128);
     }
@@ -44,7 +44,8 @@ mod tests {
         let usdc_fund: i128 = 10_000_000;
         let withdraw: u128 = 5_000_000;
         StellarAssetClient::new(&f.env, &f.usdc_id).mint(&f.game_id, &usdc_fund);
-        f.game.withdraw_funds(&f.usdc_id, &recipient, &withdraw);
+        f.game
+            .admin_withdraw_funds(&f.usdc_id, &recipient, &withdraw);
         let usdc = soroban_sdk::token::Client::new(&f.env, &f.usdc_id);
         assert_eq!(usdc.balance(&recipient), withdraw as i128);
         assert_eq!(usdc.balance(&f.game_id), usdc_fund - withdraw as i128);
@@ -55,7 +56,8 @@ mod tests {
         let f = Fixture::new();
         let recipient = Address::generate(&f.env);
         let withdraw: u128 = 100_000_000_000_000_000_000_000;
-        f.game.withdraw_funds(&f.tyc_id, &recipient, &withdraw);
+        f.game
+            .admin_withdraw_funds(&f.tyc_id, &recipient, &withdraw);
         assert_eq!(f.tyc_balance(&f.game_id), GAME_FUND - withdraw as i128);
     }
 
@@ -70,7 +72,7 @@ mod tests {
         ];
         let total: i128 = amounts.iter().map(|&a| a as i128).sum();
         for &a in amounts {
-            f.game.withdraw_funds(&f.tyc_id, &recipient, &a);
+            f.game.admin_withdraw_funds(&f.tyc_id, &recipient, &a);
         }
         assert_eq!(f.tyc_balance(&recipient), total);
         assert_eq!(f.tyc_balance(&f.game_id), GAME_FUND - total);
@@ -81,7 +83,7 @@ mod tests {
         let f = Fixture::new();
         let recipient = Address::generate(&f.env);
         f.game
-            .withdraw_funds(&f.tyc_id, &recipient, &(GAME_FUND as u128));
+            .admin_withdraw_funds(&f.tyc_id, &recipient, &(GAME_FUND as u128));
         assert_eq!(f.tyc_balance(&f.game_id), 0);
         assert_eq!(f.tyc_balance(&recipient), GAME_FUND);
     }
@@ -92,7 +94,7 @@ mod tests {
         let recipient = Address::generate(&f.env);
         let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             f.game
-                .withdraw_funds(&f.tyc_id, &recipient, &(GAME_FUND as u128 + 1));
+                .admin_withdraw_funds(&f.tyc_id, &recipient, &(GAME_FUND as u128 + 1));
         }));
         assert!(res.is_err());
     }
@@ -106,7 +108,7 @@ mod tests {
             .register_stellar_asset_contract_v2(Address::generate(&f.env))
             .address();
         let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            f.game.withdraw_funds(&rogue, &recipient, &1);
+            f.game.admin_withdraw_funds(&rogue, &recipient, &1);
         }));
         assert!(res.is_err());
     }
@@ -158,7 +160,7 @@ mod tests {
         let f = Fixture::new();
         let recipient = Address::generate(&f.env);
         let before = f.tyc_balance(&f.game_id);
-        f.game.withdraw_funds(&f.tyc_id, &recipient, &0);
+        f.game.admin_withdraw_funds(&f.tyc_id, &recipient, &0);
         assert_eq!(f.tyc_balance(&f.game_id), before);
         assert_eq!(f.tyc_balance(&recipient), 0);
     }
@@ -173,9 +175,9 @@ mod tests {
         let a1: u128 = 10_000_000_000_000_000_000_000;
         let a2: u128 = 20_000_000_000_000_000_000_000;
         let a3: u128 = 30_000_000_000_000_000_000_000;
-        f.game.withdraw_funds(&f.tyc_id, &r1, &a1);
-        f.game.withdraw_funds(&f.tyc_id, &r2, &a2);
-        f.game.withdraw_funds(&f.tyc_id, &r3, &a3);
+        f.game.admin_withdraw_funds(&f.tyc_id, &r1, &a1);
+        f.game.admin_withdraw_funds(&f.tyc_id, &r2, &a2);
+        f.game.admin_withdraw_funds(&f.tyc_id, &r3, &a3);
         assert_eq!(f.tyc_balance(&r1), a1 as i128);
         assert_eq!(f.tyc_balance(&r2), a2 as i128);
         assert_eq!(f.tyc_balance(&r3), a3 as i128);
@@ -252,9 +254,10 @@ mod tests {
         let usdc_withdraw: u128 = 3_000_000;
         let tyc_withdraw: u128 = 50_000_000_000_000_000_000_000;
         StellarAssetClient::new(&f.env, &f.usdc_id).mint(&f.game_id, &usdc_fund);
-        f.game.withdraw_funds(&f.tyc_id, &recipient, &tyc_withdraw);
         f.game
-            .withdraw_funds(&f.usdc_id, &recipient, &usdc_withdraw);
+            .admin_withdraw_funds(&f.tyc_id, &recipient, &tyc_withdraw);
+        f.game
+            .admin_withdraw_funds(&f.usdc_id, &recipient, &usdc_withdraw);
         assert_eq!(f.tyc_balance(&recipient), tyc_withdraw as i128);
         let usdc = soroban_sdk::token::Client::new(&f.env, &f.usdc_id);
         assert_eq!(usdc.balance(&recipient), usdc_withdraw as i128);

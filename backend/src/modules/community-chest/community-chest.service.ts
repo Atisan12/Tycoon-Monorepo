@@ -15,7 +15,8 @@ import {
   CommunityChestSortBy,
   COMMUNITY_CHEST_MAX_LIMIT,
 } from './dto/get-community-chest-list.dto';
-import { RANDOM_PROVIDER, RandomProvider } from '../../common/random-provider';
+import { RANDOM_PROVIDER } from '../../common/random-provider';
+import type { RandomProvider } from '../../common/random-provider';
 import { PaginatedResponse } from '../../common/interfaces/paginated-response.interface';
 import { secureRandomInt } from '../../common/crypto-secure-random';
 import {

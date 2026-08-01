@@ -267,7 +267,12 @@ fn test_add_boost_cap_exceeded_panics() {
     }
     client.add_boost(
         &player,
-        &boost(MAX_BOOSTS_PER_PLAYER as u128 + 1, BoostType::Additive, 100, 0),
+        &boost(
+            MAX_BOOSTS_PER_PLAYER as u128 + 1,
+            BoostType::Additive,
+            100,
+            0,
+        ),
     );
 }
 

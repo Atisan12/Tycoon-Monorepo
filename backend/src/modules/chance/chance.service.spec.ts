@@ -6,6 +6,7 @@ import { ChanceObservabilityService } from './chance-observability.service';
 import { Chance } from './entities/chance.entity';
 import { ChanceType } from './enums/chance-type.enum';
 import { LoggerService } from '../../common/logger/logger.service';
+import { PaginationService } from '../../common';
 import { RANDOM_PROVIDER, SeededRandomProvider } from '../../common/random-provider';
 
 describe('ChanceService observability (#880)', () => {
@@ -30,6 +31,22 @@ describe('ChanceService observability (#880)', () => {
         { provide: getRepositoryToken(Chance), useValue: mockChanceRepository },
         { provide: LoggerService, useValue: logger },
         { provide: RANDOM_PROVIDER, useValue: new SeededRandomProvider(seed) },
+        {
+          provide: PaginationService,
+          useValue: {
+            paginate: jest.fn().mockResolvedValue({
+              data: [],
+              meta: {
+                page: 1,
+                limit: 10,
+                totalItems: 0,
+                totalPages: 0,
+                hasNextPage: false,
+                hasPreviousPage: false,
+              },
+            }),
+          },
+        },
       ],
     }).compile();
   }

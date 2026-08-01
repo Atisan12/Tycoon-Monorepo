@@ -177,7 +177,8 @@ impl TycoonContract {
         }
 
         let reward_system = storage::get_reward_system(&env);
-        let reward_client = tycoon_reward_system::TycoonRewardSystemClient::new(&env, &reward_system);
+        let reward_client =
+            tycoon_reward_system::TycoonRewardSystemClient::new(&env, &reward_system);
         let _token_id = reward_client.mint_voucher(&admin, &player, &2_0000000u128);
 
         storage::set_voucher_minted(&env, &player);
@@ -312,18 +313,6 @@ impl TycoonContract {
 
 #[contractimpl]
 impl TycoonContract {
-    /// Deprecated — use `admin_migrate` instead.
-    #[deprecated(since = "0.2.0", note = "Use admin_migrate instead")]
-    pub fn migrate(env: Env) {
-        Self::admin_migrate(env);
-    }
-
-    /// Deprecated — use `admin_withdraw_funds` instead.
-    #[deprecated(since = "0.2.0", note = "Use admin_withdraw_funds instead")]
-    pub fn withdraw_funds(env: Env, token: Address, to: Address, amount: u128) {
-        Self::admin_withdraw_funds(env, token, to, amount);
-    }
-
     /// Deprecated — use `admin_set_collectible_info` instead.
     #[deprecated(since = "0.2.0", note = "Use admin_set_collectible_info instead")]
     pub fn set_collectible_info(

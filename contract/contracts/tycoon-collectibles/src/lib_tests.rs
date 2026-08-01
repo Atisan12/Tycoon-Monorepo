@@ -1,4 +1,3 @@
-#![cfg(test)]
 //! SW-CT-LIB-001: Supplemental coverage tests for tycoon-collectibles lib.rs
 //!
 //! Targets code paths and entrypoints in lib.rs not fully exercised by the
@@ -97,7 +96,10 @@ fn test_token_uri_with_ipfs_base() {
     let token_id = client.mint_collectible(&admin, &recipient, &3, &1);
 
     let uri = client.token_uri(&token_id);
-    assert!(uri.len() > ipfs_base.len(), "IPFS URI must include token ID");
+    assert!(
+        uri.len() > ipfs_base.len(),
+        "IPFS URI must include token ID"
+    );
 }
 
 // ── migrate ───────────────────────────────────────────────────────────────────
@@ -223,7 +225,10 @@ fn test_mint_collectible_by_backend_minter() {
 
     let token_id = client.mint_collectible(&minter, &user, &5, &1);
     assert_eq!(client.balance_of(&user, &token_id), 1);
-    assert_eq!(client.get_token_perk(&token_id), crate::types::Perk::ExtraTurn);
+    assert_eq!(
+        client.get_token_perk(&token_id),
+        crate::types::Perk::ExtraTurn
+    );
 }
 
 // ── stock_shop token ID is strictly increasing ────────────────────────────────
@@ -443,10 +448,25 @@ fn test_stock_shop_all_non_tiered_perks_succeed() {
     let (client, _, _) = setup(&env);
 
     // Non-tiered perks (3-11, except 1 CashTiered and 2 TaxRefund) accept any strength
-    let non_tiered = [(3u32, 0u32), (4, 0), (5, 0), (6, 0), (7, 0), (8, 1), (9, 0), (10, 0), (11, 0)];
+    let non_tiered = [
+        (3u32, 0u32),
+        (4, 0),
+        (5, 0),
+        (6, 0),
+        (7, 0),
+        (8, 1),
+        (9, 0),
+        (10, 0),
+        (11, 0),
+    ];
     for (perk, strength) in non_tiered {
         let result = client.try_stock_shop(&1, &perk, &strength, &100, &0);
-        assert!(result.is_ok(), "perk={} strength={} should succeed", perk, strength);
+        assert!(
+            result.is_ok(),
+            "perk={} strength={} should succeed",
+            perk,
+            strength
+        );
     }
 }
 

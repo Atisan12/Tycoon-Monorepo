@@ -103,7 +103,10 @@ mod tests {
         // Season rewards minted into the pool, then paid out to the player.
         client.mint(&pool, &8_000_000_000_000_000_000_000);
         client.transfer(&pool, &player, &8_000_000_000_000_000_000_000);
-        assert_eq!(client.total_supply(), SUPPLY + 8_000_000_000_000_000_000_000);
+        assert_eq!(
+            client.total_supply(),
+            SUPPLY + 8_000_000_000_000_000_000_000
+        );
 
         // Player delegates spend authority to the game for an in-game purchase.
         client.approve(&player, &game, &3_000_000_000_000_000_000_000, &0);

@@ -158,8 +158,12 @@ mod tests {
 
     #[test]
     fn test_ledger_constants_are_consistent() {
-        assert!(INSTANCE_BUMP_LEDGERS > INSTANCE_BUMP_THRESHOLD);
-        assert!(PERSISTENT_BUMP_LEDGERS > PERSISTENT_BUMP_THRESHOLD);
+        let instance_bump = INSTANCE_BUMP_LEDGERS;
+        let instance_thresh = INSTANCE_BUMP_THRESHOLD;
+        let persistent_bump = PERSISTENT_BUMP_LEDGERS;
+        let persistent_thresh = PERSISTENT_BUMP_THRESHOLD;
+        assert!(instance_bump > instance_thresh);
+        assert!(persistent_bump > persistent_thresh);
         assert_eq!(INSTANCE_BUMP_LEDGERS, PERSISTENT_BUMP_LEDGERS);
         assert_eq!(INSTANCE_BUMP_THRESHOLD, PERSISTENT_BUMP_THRESHOLD);
         assert_eq!(TEMP_BUMP_LEDGERS, LEDGERS_PER_DAY);
@@ -229,12 +233,42 @@ mod tests {
     #[test]
     fn test_known_operations_budget_table() {
         let table: &[RentBudgetEntry] = &[
-            RentBudgetEntry { entrypoint: "initialize", instance_writes: 3, persistent_writes: 1, temporary_writes: 0 },
-            RentBudgetEntry { entrypoint: "mint",        instance_writes: 1, persistent_writes: 1, temporary_writes: 0 },
-            RentBudgetEntry { entrypoint: "transfer",    instance_writes: 0, persistent_writes: 2, temporary_writes: 0 },
-            RentBudgetEntry { entrypoint: "approve",     instance_writes: 0, persistent_writes: 1, temporary_writes: 0 },
-            RentBudgetEntry { entrypoint: "burn",        instance_writes: 1, persistent_writes: 1, temporary_writes: 0 },
-            RentBudgetEntry { entrypoint: "balance",     instance_writes: 0, persistent_writes: 0, temporary_writes: 0 },
+            RentBudgetEntry {
+                entrypoint: "initialize",
+                instance_writes: 3,
+                persistent_writes: 1,
+                temporary_writes: 0,
+            },
+            RentBudgetEntry {
+                entrypoint: "mint",
+                instance_writes: 1,
+                persistent_writes: 1,
+                temporary_writes: 0,
+            },
+            RentBudgetEntry {
+                entrypoint: "transfer",
+                instance_writes: 0,
+                persistent_writes: 2,
+                temporary_writes: 0,
+            },
+            RentBudgetEntry {
+                entrypoint: "approve",
+                instance_writes: 0,
+                persistent_writes: 1,
+                temporary_writes: 0,
+            },
+            RentBudgetEntry {
+                entrypoint: "burn",
+                instance_writes: 1,
+                persistent_writes: 1,
+                temporary_writes: 0,
+            },
+            RentBudgetEntry {
+                entrypoint: "balance",
+                instance_writes: 0,
+                persistent_writes: 0,
+                temporary_writes: 0,
+            },
         ];
         for entry in table {
             assert!(

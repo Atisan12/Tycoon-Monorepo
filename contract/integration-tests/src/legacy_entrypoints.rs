@@ -204,7 +204,7 @@ mod tests {
         // Admin can still withdraw from game contract.
         let withdraw: u128 = 10_000_000_000_000_000_000_000;
         let game_before = f.tyc_balance(&f.game_id);
-        f.game.withdraw_funds(&f.tyc_id, &f.admin, &withdraw);
+        f.game.admin_withdraw_funds(&f.tyc_id, &f.admin, &withdraw);
         assert_eq!(f.tyc_balance(&f.game_id), game_before - withdraw as i128);
     }
 

@@ -675,7 +675,7 @@ fn test_cap_clear_then_refill_to_cap() {
 fn test_edge_boost_id_zero_is_valid() {
     let env = make_env();
     let (client, player) = setup(&env);
-    
+
     client.add_boost(&player, &nb(0, BoostType::Additive, 1000, 0));
     assert_eq!(client.get_boosts(&player).len(), 1);
     assert_eq!(client.get_boosts(&player).get(0).unwrap().id, 0);
@@ -686,10 +686,10 @@ fn test_edge_boost_id_zero_is_valid() {
 fn test_edge_override_priority_zero_is_valid() {
     let env = make_env();
     let (client, player) = setup(&env);
-    
+
     client.add_boost(&player, &nb(1, BoostType::Override, 15000, 0));
     client.add_boost(&player, &nb(2, BoostType::Override, 20000, 0));
-    
+
     // One of them should apply (both have priority 0)
     let result = client.calculate_total_boost(&player);
     assert!(result == 15000 || result == 20000);
@@ -700,7 +700,7 @@ fn test_edge_override_priority_zero_is_valid() {
 fn test_edge_minimum_additive_value() {
     let env = make_env();
     let (client, player) = setup(&env);
-    
+
     client.add_boost(&player, &nb(1, BoostType::Additive, 1, 0));
     assert_eq!(client.calculate_total_boost(&player), 10001);
 }
@@ -710,7 +710,7 @@ fn test_edge_minimum_additive_value() {
 fn test_edge_minimum_multiplicative_value() {
     let env = make_env();
     let (client, player) = setup(&env);
-    
+
     client.add_boost(&player, &nb(1, BoostType::Multiplicative, 1, 0));
     // 10000 * (1 / 10000) = 1
     assert_eq!(client.calculate_total_boost(&player), 1);
@@ -721,7 +721,7 @@ fn test_edge_minimum_multiplicative_value() {
 fn test_edge_minimum_override_value() {
     let env = make_env();
     let (client, player) = setup(&env);
-    
+
     client.add_boost(&player, &nb(1, BoostType::Override, 1, 1));
     assert_eq!(client.calculate_total_boost(&player), 1);
 }
@@ -732,10 +732,10 @@ fn test_edge_minimum_future_expiry_ledger() {
     let env = make_env();
     set_ledger(&env, 0);
     let (client, player) = setup(&env);
-    
+
     client.add_boost(&player, &eb(1, BoostType::Additive, 1000, 0, 1));
     assert_eq!(client.calculate_total_boost(&player), 11000);
-    
+
     set_ledger(&env, 1);
     assert_eq!(client.calculate_total_boost(&player), 10000);
 }
@@ -746,9 +746,9 @@ fn test_edge_maximum_expiry_ledger() {
     let env = make_env();
     set_ledger(&env, 100);
     let (client, player) = setup(&env);
-    
+
     client.add_boost(&player, &eb(1, BoostType::Additive, 1000, 0, u32::MAX));
-    
+
     // Should still be active at very high ledger
     set_ledger(&env, u32::MAX - 1);
     assert_eq!(client.calculate_total_boost(&player), 11000);
@@ -759,11 +759,11 @@ fn test_edge_maximum_expiry_ledger() {
 fn test_edge_large_boost_values() {
     let env = make_env();
     let (client, player) = setup(&env);
-    
+
     // Large but safe multiplicative value
     let large_value = u32::MAX / 2;
     client.add_boost(&player, &nb(1, BoostType::Multiplicative, large_value, 0));
-    
+
     // Should not overflow, result should be calculable
     let result = client.calculate_total_boost(&player);
     assert!(result > 10000);
@@ -776,7 +776,7 @@ fn test_edge_large_boost_values() {
 fn test_complex_all_types_at_capacity() {
     let env = make_env();
     let (client, player) = setup(&env);
-    
+
     // 3 multiplicative, 4 additive, 3 override
     for i in 0..3 {
         client.add_boost(&player, &nb(i + 1, BoostType::Multiplicative, 11000, 0));
@@ -785,11 +785,14 @@ fn test_complex_all_types_at_capacity() {
         client.add_boost(&player, &nb(i + 1, BoostType::Additive, 500, 0));
     }
     for i in 7..10 {
-        client.add_boost(&player, &nb(i + 1, BoostType::Override, 25000, i));
+        client.add_boost(
+            &player,
+            &nb(i as u128 + 1, BoostType::Override, 25000, i as u32),
+        );
     }
-    
-    assert_eq!(client.get_boosts(&player).len(), MAX_BOOSTS_PER_PLAYER as usize);
-    
+
+    assert_eq!(client.get_boosts(&player).len(), MAX_BOOSTS_PER_PLAYER);
+
     // Highest override priority wins
     let result = client.calculate_total_boost(&player);
     assert_eq!(result, 25000);
@@ -801,7 +804,7 @@ fn test_complex_multiple_expiry_times() {
     let env = make_env();
     set_ledger(&env, 100);
     let (client, player) = setup(&env);
-    
+
     // Expires at 150
     client.add_boost(&player, &eb(1, BoostType::Additive, 1000, 0, 150));
     // Expires at 200
@@ -810,18 +813,18 @@ fn test_complex_multiple_expiry_times() {
     client.add_boost(&player, &eb(3, BoostType::Additive, 500, 0, 250));
     // Permanent
     client.add_boost(&player, &nb(4, BoostType::Additive, 200, 0));
-    
+
     // T=100: All active → 10000 * 1.5 * (1 + 0.1 + 0.05 + 0.02) = 17550
     assert_eq!(client.calculate_total_boost(&player), 17550);
-    
+
     // T=175: Boost 1 expired → 10000 * 1.5 * (1 + 0.05 + 0.02) = 16050
     set_ledger(&env, 175);
     assert_eq!(client.calculate_total_boost(&player), 16050);
-    
+
     // T=225: Boosts 1,2 expired → 10000 * (1 + 0.05 + 0.02) = 10700
     set_ledger(&env, 225);
     assert_eq!(client.calculate_total_boost(&player), 10700);
-    
+
     // T=275: Only boost 4 remains → 10000 * 1.02 = 10200
     set_ledger(&env, 275);
     assert_eq!(client.calculate_total_boost(&player), 10200);
@@ -833,7 +836,7 @@ fn test_complex_cascading_override_expiries() {
     let env = make_env();
     set_ledger(&env, 100);
     let (client, player) = setup(&env);
-    
+
     // Override priority 10, expires at 200
     client.add_boost(&player, &eb(1, BoostType::Override, 50000, 10, 200));
     // Override priority 5, expires at 300
@@ -843,15 +846,15 @@ fn test_complex_cascading_override_expiries() {
     // Fallback: multiplicative + additive (permanent)
     client.add_boost(&player, &nb(4, BoostType::Multiplicative, 15000, 0));
     client.add_boost(&player, &nb(5, BoostType::Additive, 2000, 0));
-    
+
     // T=150: Priority 10 override wins
     set_ledger(&env, 150);
     assert_eq!(client.calculate_total_boost(&player), 50000);
-    
+
     // T=250: Priority 10 expired, priority 5 wins
     set_ledger(&env, 250);
     assert_eq!(client.calculate_total_boost(&player), 40000);
-    
+
     // T=350: Priorities 10,5 expired, priority 1 wins
     set_ledger(&env, 350);
     assert_eq!(client.calculate_total_boost(&player), 30000);
@@ -863,7 +866,7 @@ fn test_complex_multiple_simultaneous_expiries_free_capacity() {
     let env = make_env();
     set_ledger(&env, 100);
     let (client, player) = setup(&env);
-    
+
     // 5 boosts expiring at 200
     for i in 0..5 {
         client.add_boost(&player, &eb(i + 1, BoostType::Additive, 100, 0, 200));
@@ -872,18 +875,21 @@ fn test_complex_multiple_simultaneous_expiries_free_capacity() {
     for i in 5..10 {
         client.add_boost(&player, &nb(i + 1, BoostType::Additive, 100, 0));
     }
-    
-    assert_eq!(client.get_boosts(&player).len(), MAX_BOOSTS_PER_PLAYER as usize);
-    
+
+    assert_eq!(client.get_boosts(&player).len(), MAX_BOOSTS_PER_PLAYER);
+
     // Advance past expiry
     set_ledger(&env, 250);
-    
+
     // Auto-prune should happen, allowing 5 new boosts
     for i in 10..15 {
         client.add_boost(&player, &nb(i + 1, BoostType::Additive, 100, 0));
     }
-    
-    assert_eq!(client.get_active_boosts(&player).len(), MAX_BOOSTS_PER_PLAYER as usize);
+
+    assert_eq!(
+        client.get_active_boosts(&player).len(),
+        MAX_BOOSTS_PER_PLAYER
+    );
 }
 
 /// COMPLEX-05: get_boosts vs get_active_boosts discrepancy
@@ -892,22 +898,22 @@ fn test_complex_get_boosts_vs_get_active_boosts() {
     let env = make_env();
     set_ledger(&env, 100);
     let (client, player) = setup(&env);
-    
+
     // 3 expired, 2 active
     client.add_boost(&player, &eb(1, BoostType::Additive, 100, 0, 150));
     client.add_boost(&player, &eb(2, BoostType::Additive, 100, 0, 150));
     client.add_boost(&player, &eb(3, BoostType::Additive, 100, 0, 150));
     client.add_boost(&player, &nb(4, BoostType::Additive, 100, 0));
     client.add_boost(&player, &nb(5, BoostType::Additive, 100, 0));
-    
+
     set_ledger(&env, 200);
-    
+
     // get_boosts returns all (including expired)
     assert_eq!(client.get_boosts(&player).len(), 5);
-    
+
     // get_active_boosts returns only active
     assert_eq!(client.get_active_boosts(&player).len(), 2);
-    
+
     // calculate uses only active
     assert_eq!(client.calculate_total_boost(&player), 10200); // 2 * 100bp additive
 }
@@ -918,7 +924,7 @@ fn test_complex_prune_frees_exact_slots() {
     let env = make_env();
     set_ledger(&env, 100);
     let (client, player) = setup(&env);
-    
+
     // 7 permanent + 3 expiring = 10 total
     for i in 0..7 {
         client.add_boost(&player, &nb(i + 1, BoostType::Additive, 100, 0));
@@ -926,19 +932,22 @@ fn test_complex_prune_frees_exact_slots() {
     for i in 7..10 {
         client.add_boost(&player, &eb(i + 1, BoostType::Additive, 100, 0, 200));
     }
-    
+
     set_ledger(&env, 250);
-    
+
     // Prune removes 3 expired
     let pruned = client.prune_expired_boosts(&player);
     assert_eq!(pruned, 3);
-    
+
     // Now can add exactly 3 more
     for i in 10..13 {
         client.add_boost(&player, &nb(i + 1, BoostType::Additive, 100, 0));
     }
-    
-    assert_eq!(client.get_active_boosts(&player).len(), MAX_BOOSTS_PER_PLAYER as usize);
+
+    assert_eq!(
+        client.get_active_boosts(&player).len(),
+        MAX_BOOSTS_PER_PLAYER
+    );
 }
 
 // ── Error Recovery and State Consistency ──────────────────────────────────────
@@ -948,22 +957,22 @@ fn test_complex_prune_frees_exact_slots() {
 fn test_error_cap_exceeded_no_state_corruption() {
     let env = make_env();
     let (client, player) = setup(&env);
-    
+
     // Fill to capacity
     for i in 0..MAX_BOOSTS_PER_PLAYER {
         client.add_boost(&player, &nb(i as u128 + 1, BoostType::Additive, 100, 0));
     }
-    
+
     let boosts_before = client.get_boosts(&player).len();
     let calc_before = client.calculate_total_boost(&player);
-    
+
     // Try to add 11th
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         client.add_boost(&player, &nb(999, BoostType::Additive, 100, 0));
     }));
-    
+
     assert!(result.is_err());
-    
+
     // State unchanged
     assert_eq!(client.get_boosts(&player).len(), boosts_before);
     assert_eq!(client.calculate_total_boost(&player), calc_before);
@@ -974,24 +983,24 @@ fn test_error_cap_exceeded_no_state_corruption() {
 fn test_error_duplicate_id_no_state_corruption() {
     let env = make_env();
     let (client, player) = setup(&env);
-    
+
     client.add_boost(&player, &nb(1, BoostType::Additive, 1000, 0));
     client.add_boost(&player, &nb(2, BoostType::Additive, 500, 0));
-    
+
     let boosts_before = client.get_boosts(&player).len();
     let calc_before = client.calculate_total_boost(&player);
-    
+
     // Try duplicate
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         client.add_boost(&player, &nb(1, BoostType::Additive, 2000, 0));
     }));
-    
+
     assert!(result.is_err());
-    
+
     // State unchanged
     assert_eq!(client.get_boosts(&player).len(), boosts_before);
     assert_eq!(client.calculate_total_boost(&player), calc_before);
-    
+
     // Original boost intact
     assert_eq!(client.get_boosts(&player).get(0).unwrap().value, 1000);
 }
@@ -1001,16 +1010,16 @@ fn test_error_duplicate_id_no_state_corruption() {
 fn test_error_invalid_value_no_state_corruption() {
     let env = make_env();
     let (client, player) = setup(&env);
-    
+
     client.add_boost(&player, &nb(1, BoostType::Additive, 1000, 0));
-    
+
     let boosts_before = client.get_boosts(&player).len();
-    
+
     // Try zero value
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         client.add_boost(&player, &nb(2, BoostType::Additive, 0, 0));
     }));
-    
+
     assert!(result.is_err());
     assert_eq!(client.get_boosts(&player).len(), boosts_before);
 }
@@ -1021,16 +1030,16 @@ fn test_error_invalid_expiry_no_state_corruption() {
     let env = make_env();
     set_ledger(&env, 500);
     let (client, player) = setup(&env);
-    
+
     client.add_boost(&player, &nb(1, BoostType::Additive, 1000, 0));
-    
+
     let boosts_before = client.get_boosts(&player).len();
-    
+
     // Try past expiry
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         client.add_boost(&player, &eb(2, BoostType::Additive, 500, 0, 400));
     }));
-    
+
     assert!(result.is_err());
     assert_eq!(client.get_boosts(&player).len(), boosts_before);
 }
@@ -1042,16 +1051,19 @@ fn test_error_invalid_expiry_no_state_corruption() {
 fn test_cap_var_all_multiplicative() {
     let env = make_env();
     let (client, player) = setup(&env);
-    
+
     for i in 0..MAX_BOOSTS_PER_PLAYER {
-        client.add_boost(&player, &nb(i as u128 + 1, BoostType::Multiplicative, 11000, 0));
+        client.add_boost(
+            &player,
+            &nb(i as u128 + 1, BoostType::Multiplicative, 11000, 0),
+        );
     }
-    
-    assert_eq!(client.get_boosts(&player).len(), MAX_BOOSTS_PER_PLAYER as usize);
-    
+
+    assert_eq!(client.get_boosts(&player).len(), MAX_BOOSTS_PER_PLAYER);
+
     // 1.1^10 ≈ 2.5937 → ~25937
     let result = client.calculate_total_boost(&player);
-    assert!(result >= 25900 && result <= 26000);
+    assert!((25900..=26000).contains(&result));
 }
 
 /// CAP-VAR-02: Filling cap with only override boosts (different priorities)
@@ -1059,15 +1071,18 @@ fn test_cap_var_all_multiplicative() {
 fn test_cap_var_all_overrides() {
     let env = make_env();
     let (client, player) = setup(&env);
-    
+
     for i in 0..MAX_BOOSTS_PER_PLAYER {
         let priority = (i + 1) * 10;
         let value = 10000 + (i * 1000);
-        client.add_boost(&player, &nb(i as u128 + 1, BoostType::Override, value, priority));
+        client.add_boost(
+            &player,
+            &nb(i as u128 + 1, BoostType::Override, value, priority),
+        );
     }
-    
-    assert_eq!(client.get_boosts(&player).len(), MAX_BOOSTS_PER_PLAYER as usize);
-    
+
+    assert_eq!(client.get_boosts(&player).len(), MAX_BOOSTS_PER_PLAYER);
+
     // Highest priority (100) with value 19000 should win
     assert_eq!(client.calculate_total_boost(&player), 19000);
 }
@@ -1078,21 +1093,24 @@ fn test_cap_var_clear_and_immediate_refill() {
     let env = make_env();
     set_ledger(&env, 100);
     let (client, player) = setup(&env);
-    
+
     // Fill
     for i in 0..MAX_BOOSTS_PER_PLAYER {
         client.add_boost(&player, &nb(i as u128 + 1, BoostType::Additive, 100, 0));
     }
-    
+
     // Clear
     client.clear_boosts(&player);
-    
+
     // Immediately refill (same ledger)
     for i in 0..MAX_BOOSTS_PER_PLAYER {
-        client.add_boost(&player, &nb(i as u128 + 100, BoostType::Multiplicative, 10500, 0));
+        client.add_boost(
+            &player,
+            &nb(i as u128 + 100, BoostType::Multiplicative, 10500, 0),
+        );
     }
-    
-    assert_eq!(client.get_boosts(&player).len(), MAX_BOOSTS_PER_PLAYER as usize);
+
+    assert_eq!(client.get_boosts(&player).len(), MAX_BOOSTS_PER_PLAYER);
 }
 
 // ── Additional Expiry Rule Variations ─────────────────────────────────────────
@@ -1103,15 +1121,15 @@ fn test_exp_var_all_expire_simultaneously() {
     let env = make_env();
     set_ledger(&env, 100);
     let (client, player) = setup(&env);
-    
+
     // All expire at 200
     for i in 0..5 {
         client.add_boost(&player, &eb(i + 1, BoostType::Additive, 500, 0, 200));
     }
-    
+
     set_ledger(&env, 199);
     assert!(client.calculate_total_boost(&player) > 10000);
-    
+
     set_ledger(&env, 200);
     assert_eq!(client.calculate_total_boost(&player), 10000);
 }
@@ -1122,14 +1140,14 @@ fn test_exp_var_prune_no_expired() {
     let env = make_env();
     set_ledger(&env, 100);
     let (client, player) = setup(&env);
-    
+
     // All permanent or far future
     client.add_boost(&player, &nb(1, BoostType::Additive, 1000, 0));
     client.add_boost(&player, &eb(2, BoostType::Additive, 500, 0, 10000));
-    
+
     let pruned = client.prune_expired_boosts(&player);
     assert_eq!(pruned, 0);
-    
+
     assert_eq!(client.get_boosts(&player).len(), 2);
 }
 
@@ -1139,17 +1157,17 @@ fn test_exp_var_prune_all_expired() {
     let env = make_env();
     set_ledger(&env, 100);
     let (client, player) = setup(&env);
-    
+
     // All expire at 200
     for i in 0..5 {
         client.add_boost(&player, &eb(i + 1, BoostType::Additive, 100, 0, 200));
     }
-    
+
     set_ledger(&env, 300);
-    
+
     let pruned = client.prune_expired_boosts(&player);
     assert_eq!(pruned, 5);
-    
+
     assert_eq!(client.get_boosts(&player).len(), 0);
     assert_eq!(client.calculate_total_boost(&player), 10000);
 }
@@ -1160,17 +1178,17 @@ fn test_exp_var_expiry_at_exact_boundary() {
     let env = make_env();
     set_ledger(&env, 100);
     let (client, player) = setup(&env);
-    
+
     client.add_boost(&player, &eb(1, BoostType::Additive, 1000, 0, 200));
-    
+
     // One below expiry: active
     set_ledger(&env, 199);
     assert_eq!(client.calculate_total_boost(&player), 11000);
-    
+
     // At expiry: expired
     set_ledger(&env, 200);
     assert_eq!(client.calculate_total_boost(&player), 10000);
-    
+
     // One above expiry: expired
     set_ledger(&env, 201);
     assert_eq!(client.calculate_total_boost(&player), 10000);
@@ -1183,12 +1201,12 @@ fn test_exp_var_expiry_at_exact_boundary() {
 fn test_stack_int_many_small_additives() {
     let env = make_env();
     let (client, player) = setup(&env);
-    
+
     // 10 boosts of +1% each
     for i in 0..MAX_BOOSTS_PER_PLAYER {
         client.add_boost(&player, &nb(i as u128 + 1, BoostType::Additive, 100, 0));
     }
-    
+
     // 10 * 100bp = 1000bp = +10% = 11000
     assert_eq!(client.calculate_total_boost(&player), 11000);
 }
@@ -1198,12 +1216,12 @@ fn test_stack_int_many_small_additives() {
 fn test_stack_int_large_additive_small_mult() {
     let env = make_env();
     let (client, player) = setup(&env);
-    
+
     // +200% additive
     client.add_boost(&player, &nb(1, BoostType::Additive, 20000, 0));
     // 1.1x multiplicative
     client.add_boost(&player, &nb(2, BoostType::Multiplicative, 11000, 0));
-    
+
     // 10000 * 1.1 * (1 + 2) = 33000
     assert_eq!(client.calculate_total_boost(&player), 33000);
 }
@@ -1213,14 +1231,14 @@ fn test_stack_int_large_additive_small_mult() {
 fn test_stack_int_multiple_overrides_same_priority() {
     let env = make_env();
     let (client, player) = setup(&env);
-    
+
     // All priority 5
     client.add_boost(&player, &nb(1, BoostType::Override, 20000, 5));
     client.add_boost(&player, &nb(2, BoostType::Override, 30000, 5));
     client.add_boost(&player, &nb(3, BoostType::Override, 25000, 5));
-    
+
     let result = client.calculate_total_boost(&player);
-    
+
     // One should win (deterministic based on implementation)
     assert!(result == 20000 || result == 30000 || result == 25000);
 }
@@ -1230,12 +1248,12 @@ fn test_stack_int_multiple_overrides_same_priority() {
 fn test_stack_int_mixed_types_no_override_wins() {
     let env = make_env();
     let (client, player) = setup(&env);
-    
+
     // These should NOT override because we'll add a higher priority override later
     client.add_boost(&player, &nb(1, BoostType::Multiplicative, 15000, 0)); // 1.5x
     client.add_boost(&player, &nb(2, BoostType::Additive, 1000, 0)); // +10%
     client.add_boost(&player, &nb(3, BoostType::Override, 40000, 10)); // Override
-    
+
     // Override wins
     assert_eq!(client.calculate_total_boost(&player), 40000);
 }

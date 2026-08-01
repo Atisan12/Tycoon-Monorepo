@@ -110,21 +110,96 @@ impl AuthMatrixEntry {
 /// Use it in tests to assert that entrypoint classification hasn't regressed.
 pub fn tycoon_token_auth_matrix() -> &'static [AuthMatrixEntry] {
     &[
-        AuthMatrixEntry { entrypoint: "initialize",   requirement: AuthRequirement::NoAuth,      expected_caller: CallerKind::None,        is_read_only: false },
-        AuthMatrixEntry { entrypoint: "mint",         requirement: AuthRequirement::AdminAuth,   expected_caller: CallerKind::Admin,       is_read_only: false },
-        AuthMatrixEntry { entrypoint: "set_admin",    requirement: AuthRequirement::AdminAuth,   expected_caller: CallerKind::Admin,       is_read_only: false },
-        AuthMatrixEntry { entrypoint: "transfer",     requirement: AuthRequirement::OwnerAuth,   expected_caller: CallerKind::Owner,       is_read_only: false },
-        AuthMatrixEntry { entrypoint: "transfer_from",requirement: AuthRequirement::SpenderAuth, expected_caller: CallerKind::Spender,     is_read_only: false },
-        AuthMatrixEntry { entrypoint: "approve",      requirement: AuthRequirement::OwnerAuth,   expected_caller: CallerKind::Owner,       is_read_only: false },
-        AuthMatrixEntry { entrypoint: "burn",         requirement: AuthRequirement::OwnerAuth,   expected_caller: CallerKind::Owner,       is_read_only: false },
-        AuthMatrixEntry { entrypoint: "burn_from",    requirement: AuthRequirement::SpenderAuth, expected_caller: CallerKind::Spender,     is_read_only: false },
-        AuthMatrixEntry { entrypoint: "balance",      requirement: AuthRequirement::NoAuth,      expected_caller: CallerKind::AnyContract, is_read_only: true  },
-        AuthMatrixEntry { entrypoint: "allowance",    requirement: AuthRequirement::NoAuth,      expected_caller: CallerKind::AnyContract, is_read_only: true  },
-        AuthMatrixEntry { entrypoint: "total_supply", requirement: AuthRequirement::NoAuth,      expected_caller: CallerKind::AnyContract, is_read_only: true  },
-        AuthMatrixEntry { entrypoint: "decimals",     requirement: AuthRequirement::NoAuth,      expected_caller: CallerKind::AnyContract, is_read_only: true  },
-        AuthMatrixEntry { entrypoint: "name",         requirement: AuthRequirement::NoAuth,      expected_caller: CallerKind::AnyContract, is_read_only: true  },
-        AuthMatrixEntry { entrypoint: "symbol",       requirement: AuthRequirement::NoAuth,      expected_caller: CallerKind::AnyContract, is_read_only: true  },
-        AuthMatrixEntry { entrypoint: "admin",        requirement: AuthRequirement::NoAuth,      expected_caller: CallerKind::AnyContract, is_read_only: true  },
+        AuthMatrixEntry {
+            entrypoint: "initialize",
+            requirement: AuthRequirement::NoAuth,
+            expected_caller: CallerKind::None,
+            is_read_only: false,
+        },
+        AuthMatrixEntry {
+            entrypoint: "mint",
+            requirement: AuthRequirement::AdminAuth,
+            expected_caller: CallerKind::Admin,
+            is_read_only: false,
+        },
+        AuthMatrixEntry {
+            entrypoint: "set_admin",
+            requirement: AuthRequirement::AdminAuth,
+            expected_caller: CallerKind::Admin,
+            is_read_only: false,
+        },
+        AuthMatrixEntry {
+            entrypoint: "transfer",
+            requirement: AuthRequirement::OwnerAuth,
+            expected_caller: CallerKind::Owner,
+            is_read_only: false,
+        },
+        AuthMatrixEntry {
+            entrypoint: "transfer_from",
+            requirement: AuthRequirement::SpenderAuth,
+            expected_caller: CallerKind::Spender,
+            is_read_only: false,
+        },
+        AuthMatrixEntry {
+            entrypoint: "approve",
+            requirement: AuthRequirement::OwnerAuth,
+            expected_caller: CallerKind::Owner,
+            is_read_only: false,
+        },
+        AuthMatrixEntry {
+            entrypoint: "burn",
+            requirement: AuthRequirement::OwnerAuth,
+            expected_caller: CallerKind::Owner,
+            is_read_only: false,
+        },
+        AuthMatrixEntry {
+            entrypoint: "burn_from",
+            requirement: AuthRequirement::SpenderAuth,
+            expected_caller: CallerKind::Spender,
+            is_read_only: false,
+        },
+        AuthMatrixEntry {
+            entrypoint: "balance",
+            requirement: AuthRequirement::NoAuth,
+            expected_caller: CallerKind::AnyContract,
+            is_read_only: true,
+        },
+        AuthMatrixEntry {
+            entrypoint: "allowance",
+            requirement: AuthRequirement::NoAuth,
+            expected_caller: CallerKind::AnyContract,
+            is_read_only: true,
+        },
+        AuthMatrixEntry {
+            entrypoint: "total_supply",
+            requirement: AuthRequirement::NoAuth,
+            expected_caller: CallerKind::AnyContract,
+            is_read_only: true,
+        },
+        AuthMatrixEntry {
+            entrypoint: "decimals",
+            requirement: AuthRequirement::NoAuth,
+            expected_caller: CallerKind::AnyContract,
+            is_read_only: true,
+        },
+        AuthMatrixEntry {
+            entrypoint: "name",
+            requirement: AuthRequirement::NoAuth,
+            expected_caller: CallerKind::AnyContract,
+            is_read_only: true,
+        },
+        AuthMatrixEntry {
+            entrypoint: "symbol",
+            requirement: AuthRequirement::NoAuth,
+            expected_caller: CallerKind::AnyContract,
+            is_read_only: true,
+        },
+        AuthMatrixEntry {
+            entrypoint: "admin",
+            requirement: AuthRequirement::NoAuth,
+            expected_caller: CallerKind::AnyContract,
+            is_read_only: true,
+        },
     ]
 }
 
@@ -188,9 +263,14 @@ mod tests {
         let matrix = tycoon_token_auth_matrix();
         let admin_fns = ["mint", "set_admin"];
         for fn_name in admin_fns {
-            let entry = matrix.iter().find(|e| e.entrypoint == fn_name)
+            let entry = matrix
+                .iter()
+                .find(|e| e.entrypoint == fn_name)
                 .unwrap_or_else(|| panic!("{fn_name} not in matrix"));
-            assert!(entry.requires_admin(), "{fn_name} should require admin auth");
+            assert!(
+                entry.requires_admin(),
+                "{fn_name} should require admin auth"
+            );
             assert_eq!(entry.expected_caller, CallerKind::Admin);
         }
     }
@@ -198,11 +278,24 @@ mod tests {
     #[test]
     fn test_tycoon_token_matrix_read_only_entries_are_freely_callable() {
         let matrix = tycoon_token_auth_matrix();
-        let read_fns = ["balance", "allowance", "total_supply", "decimals", "name", "symbol", "admin"];
+        let read_fns = [
+            "balance",
+            "allowance",
+            "total_supply",
+            "decimals",
+            "name",
+            "symbol",
+            "admin",
+        ];
         for fn_name in read_fns {
-            let entry = matrix.iter().find(|e| e.entrypoint == fn_name)
+            let entry = matrix
+                .iter()
+                .find(|e| e.entrypoint == fn_name)
                 .unwrap_or_else(|| panic!("{fn_name} not in matrix"));
-            assert!(entry.is_freely_callable(), "{fn_name} should be freely callable");
+            assert!(
+                entry.is_freely_callable(),
+                "{fn_name} should be freely callable"
+            );
             assert!(entry.is_read_only, "{fn_name} should be marked read_only");
         }
     }
@@ -212,9 +305,15 @@ mod tests {
         let matrix = tycoon_token_auth_matrix();
         let owner_fns = ["transfer", "approve", "burn"];
         for fn_name in owner_fns {
-            let entry = matrix.iter().find(|e| e.entrypoint == fn_name)
+            let entry = matrix
+                .iter()
+                .find(|e| e.entrypoint == fn_name)
                 .unwrap_or_else(|| panic!("{fn_name} not in matrix"));
-            assert_eq!(entry.requirement, AuthRequirement::OwnerAuth, "{fn_name} should require OwnerAuth");
+            assert_eq!(
+                entry.requirement,
+                AuthRequirement::OwnerAuth,
+                "{fn_name} should require OwnerAuth"
+            );
             assert_eq!(entry.expected_caller, CallerKind::Owner);
             assert!(!entry.is_read_only);
         }
@@ -225,9 +324,15 @@ mod tests {
         let matrix = tycoon_token_auth_matrix();
         let spender_fns = ["transfer_from", "burn_from"];
         for fn_name in spender_fns {
-            let entry = matrix.iter().find(|e| e.entrypoint == fn_name)
+            let entry = matrix
+                .iter()
+                .find(|e| e.entrypoint == fn_name)
                 .unwrap_or_else(|| panic!("{fn_name} not in matrix"));
-            assert_eq!(entry.requirement, AuthRequirement::SpenderAuth, "{fn_name} should require SpenderAuth");
+            assert_eq!(
+                entry.requirement,
+                AuthRequirement::SpenderAuth,
+                "{fn_name} should require SpenderAuth"
+            );
             assert_eq!(entry.expected_caller, CallerKind::Spender);
         }
     }
@@ -277,10 +382,7 @@ mod tests {
     #[test]
     fn test_auth_requirement_used_in_match() {
         let req = AuthRequirement::SpenderAuth;
-        let requires_sig = match req {
-            AuthRequirement::NoAuth => false,
-            _ => true,
-        };
+        let requires_sig = !matches!(req, AuthRequirement::NoAuth);
         assert!(requires_sig);
     }
 

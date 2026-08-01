@@ -34,13 +34,9 @@
 mod tests {
     extern crate std;
 
-    use crate::fixture::{Fixture, TestFixtureConfig};
-    use soroban_sdk::{
-        testutils::Address as _,
-        token::StellarAssetClient,
-        Address,
-    };
-    use tycoon_collectibles::TycoonCollectiblesClient;
+    use crate::fixture::Fixture;
+    use soroban_sdk::{testutils::Address as _, Address};
+    use tycoon_collectibles::{Perk, TycoonCollectiblesClient};
 
     // ── Fixture sanity ────────────────────────────────────────────────────────
 
@@ -64,7 +60,8 @@ mod tests {
         // Grant backend-minter role
         f.collectibles.set_backend_minter(&f.backend);
         let token_id: u128 = 1001;
-        f.collectibles.backend_mint(&f.backend, &f.player_a, &token_id, &3u64);
+        f.collectibles
+            .backend_mint(&f.backend, &f.player_a, &token_id, &3u64);
         assert_eq!(f.collectibles.balance_of(&f.player_a, &token_id), 3);
     }
 
@@ -75,9 +72,15 @@ mod tests {
         f.collectibles.set_backend_minter(&f.backend);
         // mint_collectible(caller, to, perk=0, strength=1)
         // Perk::None == 0 in the enum; strength 1 is valid
-        let id1 = f.collectibles.mint_collectible(&f.admin, &f.player_a, &0u32, &1u32);
-        let id2 = f.collectibles.mint_collectible(&f.admin, &f.player_b, &0u32, &1u32);
-        let id3 = f.collectibles.mint_collectible(&f.admin, &f.player_c, &0u32, &1u32);
+        let id1 = f
+            .collectibles
+            .mint_collectible(&f.admin, &f.player_a, &0u32, &1u32);
+        let id2 = f
+            .collectibles
+            .mint_collectible(&f.admin, &f.player_b, &0u32, &1u32);
+        let id3 = f
+            .collectibles
+            .mint_collectible(&f.admin, &f.player_c, &0u32, &1u32);
         assert_ne!(id1, id2);
         assert_ne!(id2, id3);
         assert_ne!(id1, id3);
@@ -95,9 +98,11 @@ mod tests {
         let f = Fixture::new();
         f.collectibles.set_backend_minter(&f.backend);
         let token_id: u128 = 42;
-        f.collectibles.backend_mint(&f.backend, &f.player_a, &token_id, &5u64);
+        f.collectibles
+            .backend_mint(&f.backend, &f.player_a, &token_id, &5u64);
 
-        f.collectibles.transfer(&f.player_a, &f.player_b, &token_id, &2u64);
+        f.collectibles
+            .transfer(&f.player_a, &f.player_b, &token_id, &2u64);
 
         assert_eq!(f.collectibles.balance_of(&f.player_a, &token_id), 3);
         assert_eq!(f.collectibles.balance_of(&f.player_b, &token_id), 2);
@@ -109,7 +114,8 @@ mod tests {
         let f = Fixture::new();
         let token_id: u128 = 99;
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            f.collectibles.transfer(&f.player_a, &f.player_b, &token_id, &1u64);
+            f.collectibles
+                .transfer(&f.player_a, &f.player_b, &token_id, &1u64);
         }));
         assert!(result.is_err(), "transfer with no balance must panic");
     }
@@ -122,7 +128,8 @@ mod tests {
         let f = Fixture::new();
         f.collectibles.set_backend_minter(&f.backend);
         let token_id: u128 = 200;
-        f.collectibles.backend_mint(&f.backend, &f.player_a, &token_id, &4u64);
+        f.collectibles
+            .backend_mint(&f.backend, &f.player_a, &token_id, &4u64);
         f.collectibles.burn(&f.player_a, &token_id, &2u64);
         assert_eq!(f.collectibles.balance_of(&f.player_a, &token_id), 2);
     }
@@ -133,7 +140,8 @@ mod tests {
         let f = Fixture::new();
         f.collectibles.set_backend_minter(&f.backend);
         let token_id: u128 = 300;
-        f.collectibles.backend_mint(&f.backend, &f.player_a, &token_id, &1u64);
+        f.collectibles
+            .backend_mint(&f.backend, &f.player_a, &token_id, &1u64);
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             f.collectibles.burn(&f.player_a, &token_id, &2u64);
         }));
@@ -148,9 +156,12 @@ mod tests {
         let f = Fixture::new();
         f.collectibles.set_backend_minter(&f.backend);
         // Mint a token with a real perk (perk=1 = first non-None variant)
-        let token_id = f.collectibles.mint_collectible(&f.admin, &f.player_a, &1u32, &5u32);
+        let token_id = f
+            .collectibles
+            .mint_collectible(&f.admin, &f.player_a, &1u32, &5u32);
         // Contract is unpaused by default — burn_collectible_for_perk must succeed
-        f.collectibles.burn_collectible_for_perk(&f.player_a, &token_id);
+        f.collectibles
+            .burn_collectible_for_perk(&f.player_a, &token_id);
         assert_eq!(f.collectibles.balance_of(&f.player_a, &token_id), 0);
     }
 
@@ -159,11 +170,14 @@ mod tests {
     fn burn_collectible_for_perk_blocked_when_paused() {
         let f = Fixture::new();
         f.collectibles.set_backend_minter(&f.backend);
-        let token_id = f.collectibles.mint_collectible(&f.admin, &f.player_a, &1u32, &5u32);
+        let token_id = f
+            .collectibles
+            .mint_collectible(&f.admin, &f.player_a, &1u32, &5u32);
         f.collectibles.set_pause(&true);
 
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            f.collectibles.burn_collectible_for_perk(&f.player_a, &token_id);
+            f.collectibles
+                .burn_collectible_for_perk(&f.player_a, &token_id);
         }));
         assert!(result.is_err(), "perk burn while paused must be rejected");
         // Balance unchanged — no tokens burned
@@ -175,10 +189,13 @@ mod tests {
     fn perk_burn_resumes_after_unpause() {
         let f = Fixture::new();
         f.collectibles.set_backend_minter(&f.backend);
-        let token_id = f.collectibles.mint_collectible(&f.admin, &f.player_a, &1u32, &5u32);
+        let token_id = f
+            .collectibles
+            .mint_collectible(&f.admin, &f.player_a, &1u32, &5u32);
         f.collectibles.set_pause(&true);
         f.collectibles.set_pause(&false);
-        f.collectibles.burn_collectible_for_perk(&f.player_a, &token_id);
+        f.collectibles
+            .burn_collectible_for_perk(&f.player_a, &token_id);
         assert_eq!(f.collectibles.balance_of(&f.player_a, &token_id), 0);
     }
 
@@ -196,7 +213,7 @@ mod tests {
         let attacker = Address::generate(&env);
         let new_minter = Address::generate(&env);
         env.mock_all_auths();
-        let _ = client.initialize(&admin);
+        client.initialize(&admin);
         env.mock_auths(&[soroban_sdk::testutils::MockAuth {
             address: &attacker,
             invoke: &soroban_sdk::testutils::MockAuthInvoke {
@@ -225,8 +242,8 @@ mod tests {
         let tyc = Address::generate(&env);
         let usdc = Address::generate(&env);
         env.mock_all_auths();
-        let _ = client.initialize(&admin);
-        let _ = client.init_shop(&tyc, &usdc);
+        client.initialize(&admin);
+        client.init_shop(&tyc, &usdc);
         // Remove admin auth — attacker attempts stock_shop
         env.mock_auths(&[soroban_sdk::testutils::MockAuth {
             address: &attacker,
@@ -258,15 +275,22 @@ mod tests {
         let second_minter = Address::generate(&f.env);
 
         f.collectibles.set_backend_minter(&first_minter);
-        assert_eq!(f.collectibles.get_backend_minter(), Some(first_minter.clone()));
+        assert_eq!(
+            f.collectibles.get_backend_minter(),
+            Some(first_minter.clone())
+        );
 
         f.collectibles.set_backend_minter(&second_minter);
-        assert_eq!(f.collectibles.get_backend_minter(), Some(second_minter.clone()));
+        assert_eq!(
+            f.collectibles.get_backend_minter(),
+            Some(second_minter.clone())
+        );
 
         // Old minter can no longer mint
         let token_id: u128 = 1234;
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            f.collectibles.backend_mint(&first_minter, &f.player_a, &token_id, &1u64);
+            f.collectibles
+                .backend_mint(&first_minter, &f.player_a, &token_id, &1u64);
         }));
         assert!(result.is_err(), "replaced minter must not mint");
     }
@@ -282,9 +306,12 @@ mod tests {
         let id_b: u128 = 20;
         let id_c: u128 = 30;
 
-        f.collectibles.backend_mint(&f.backend, &f.player_a, &id_a, &3u64);
-        f.collectibles.backend_mint(&f.backend, &f.player_b, &id_b, &5u64);
-        f.collectibles.backend_mint(&f.backend, &f.player_c, &id_c, &7u64);
+        f.collectibles
+            .backend_mint(&f.backend, &f.player_a, &id_a, &3u64);
+        f.collectibles
+            .backend_mint(&f.backend, &f.player_b, &id_b, &5u64);
+        f.collectibles
+            .backend_mint(&f.backend, &f.player_c, &id_c, &7u64);
 
         assert_eq!(f.collectibles.balance_of(&f.player_a, &id_a), 3);
         assert_eq!(f.collectibles.balance_of(&f.player_b, &id_b), 5);
@@ -316,20 +343,25 @@ mod tests {
     fn stock_shop_and_buy_with_tyc() {
         let f = Fixture::new();
         let tyc_price: u128 = 50_000_000_000_000_000_000; // 50 TYC
-        let token_id: u128;
 
         // Admin initializes the shop and stocks one collectible type
         f.collectibles.init_shop(&f.tyc_id, &f.usdc_id);
-        token_id = f.collectibles.stock_shop(&1u64, &0u32, &1u32, &tyc_price, &0u128);
+        let token_id: u128 = f
+            .collectibles
+            .stock_shop(&1u64, &0u32, &1u32, &tyc_price, &0u128);
 
         // Fund player_a with enough TYC for the purchase
         f.mint_tyc(&f.player_a, tyc_price as i128 + 1_000_000_000_000_000_000);
 
         let balance_before = f.tyc_balance(&f.player_a);
-        f.collectibles.buy_collectible_from_shop(&f.player_a, &token_id, &false);
+        f.collectibles
+            .buy_collectible_from_shop(&f.player_a, &token_id, &false);
 
         assert_eq!(f.collectibles.balance_of(&f.player_a, &token_id), 1);
-        assert_eq!(f.tyc_balance(&f.player_a), balance_before - tyc_price as i128);
+        assert_eq!(
+            f.tyc_balance(&f.player_a),
+            balance_before - tyc_price as i128
+        );
     }
 
     /// `stock_shop` → `buy_collectible_from_shop` (USDC path) completes successfully.
@@ -337,19 +369,24 @@ mod tests {
     fn stock_shop_and_buy_with_usdc() {
         let f = Fixture::new();
         let usdc_price: u128 = 5_000_000; // 5 USDC (6 decimals)
-        let token_id: u128;
 
         f.collectibles.init_shop(&f.tyc_id, &f.usdc_id);
-        token_id = f.collectibles.stock_shop(&1u64, &0u32, &1u32, &0u128, &usdc_price);
+        let token_id: u128 = f
+            .collectibles
+            .stock_shop(&1u64, &0u32, &1u32, &0u128, &usdc_price);
 
         // Fund player_b with USDC
         f.mint_usdc(&f.player_b, usdc_price as i128 + 1_000_000);
 
         let usdc_before = f.usdc_balance(&f.player_b);
-        f.collectibles.buy_collectible_from_shop(&f.player_b, &token_id, &true);
+        f.collectibles
+            .buy_collectible_from_shop(&f.player_b, &token_id, &true);
 
         assert_eq!(f.collectibles.balance_of(&f.player_b, &token_id), 1);
-        assert_eq!(f.usdc_balance(&f.player_b), usdc_before - usdc_price as i128);
+        assert_eq!(
+            f.usdc_balance(&f.player_b),
+            usdc_before - usdc_price as i128
+        );
     }
 
     /// Purchasing when stock is depleted panics.
@@ -359,13 +396,17 @@ mod tests {
         f.collectibles.init_shop(&f.tyc_id, &f.usdc_id);
         // Stock 1 item, then buy it to exhaust stock
         let tyc_price: u128 = 1_000_000_000_000_000_000;
-        let token_id = f.collectibles.stock_shop(&1u64, &0u32, &1u32, &tyc_price, &0u128);
+        let token_id = f
+            .collectibles
+            .stock_shop(&1u64, &0u32, &1u32, &tyc_price, &0u128);
         f.mint_tyc(&f.player_a, tyc_price as i128 * 2);
-        f.collectibles.buy_collectible_from_shop(&f.player_a, &token_id, &false);
+        f.collectibles
+            .buy_collectible_from_shop(&f.player_a, &token_id, &false);
 
         // Second purchase — stock exhausted
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            f.collectibles.buy_collectible_from_shop(&f.player_a, &token_id, &false);
+            f.collectibles
+                .buy_collectible_from_shop(&f.player_a, &token_id, &false);
         }));
         assert!(result.is_err(), "out-of-stock purchase must be rejected");
     }
@@ -379,8 +420,12 @@ mod tests {
         f.collectibles.set_backend_minter(&f.backend);
         assert_eq!(f.collectibles.owned_token_count(&f.player_a), 0);
 
-        let id1 = f.collectibles.mint_collectible(&f.admin, &f.player_a, &0u32, &1u32);
-        let id2 = f.collectibles.mint_collectible(&f.admin, &f.player_a, &0u32, &1u32);
+        let id1 = f
+            .collectibles
+            .mint_collectible(&f.admin, &f.player_a, &0u32, &1u32);
+        let id2 = f
+            .collectibles
+            .mint_collectible(&f.admin, &f.player_a, &0u32, &1u32);
         assert_eq!(f.collectibles.owned_token_count(&f.player_a), 2);
 
         f.collectibles.burn(&f.player_a, &id1, &1u64);
@@ -395,8 +440,12 @@ mod tests {
     fn tokens_of_returns_all_owned_ids() {
         let f = Fixture::new();
         f.collectibles.set_backend_minter(&f.backend);
-        let id1 = f.collectibles.mint_collectible(&f.admin, &f.player_b, &0u32, &1u32);
-        let id2 = f.collectibles.mint_collectible(&f.admin, &f.player_b, &0u32, &1u32);
+        let id1 = f
+            .collectibles
+            .mint_collectible(&f.admin, &f.player_b, &0u32, &1u32);
+        let id2 = f
+            .collectibles
+            .mint_collectible(&f.admin, &f.player_b, &0u32, &1u32);
 
         let owned = f.collectibles.tokens_of(&f.player_b);
         assert_eq!(owned.len(), 2);
@@ -405,8 +454,12 @@ mod tests {
         let mut found2 = false;
         for i in 0..owned.len() {
             let t = owned.get(i).unwrap();
-            if t == id1 { found1 = true; }
-            if t == id2 { found2 = true; }
+            if t == id1 {
+                found1 = true;
+            }
+            if t == id2 {
+                found2 = true;
+            }
         }
         assert!(found1, "id1 must be in tokens_of");
         assert!(found2, "id2 must be in tokens_of");
@@ -430,10 +483,12 @@ mod tests {
         let f = Fixture::new();
         f.collectibles.set_backend_minter(&f.backend);
         let token_id: u128 = 777;
-        f.collectibles.backend_mint(&f.backend, &f.player_a, &token_id, &1u64);
+        f.collectibles
+            .backend_mint(&f.backend, &f.player_a, &token_id, &1u64);
 
-        // Set perk to 1 (first non-None variant) with strength 10
-        f.collectibles.set_token_perk(&token_id, &1u32, &10u32);
+        // Set perk to CashTiered (first non-None variant) with strength 10
+        f.collectibles
+            .set_token_perk(&token_id, &Perk::CashTiered, &10u32);
 
         assert_eq!(f.collectibles.get_token_strength(&token_id), 10);
     }

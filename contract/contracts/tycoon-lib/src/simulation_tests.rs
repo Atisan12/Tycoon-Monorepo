@@ -75,7 +75,9 @@ mod tests {
         assert!(!join_allowed, "private game must not allow open joins");
 
         let mut status = GameStatus::Pending;
+        assert_eq!(status, GameStatus::Pending);
         status = GameStatus::Ongoing;
+        assert_eq!(status, GameStatus::Ongoing);
         status = GameStatus::Ended;
         assert_eq!(status, GameStatus::Ended);
     }
@@ -147,7 +149,10 @@ mod tests {
         let amount: u128 = 50_000;
         let split = calculate_fee_split(amount, &config);
 
-        assert_eq!(split.platform_amount, 0, "no fees taken from invalid config");
+        assert_eq!(
+            split.platform_amount, 0,
+            "no fees taken from invalid config"
+        );
         assert_eq!(split.creator_amount, 0);
         assert_eq!(split.pool_amount, 0);
         assert_eq!(split.residue, amount, "full amount returned as residue");
@@ -174,7 +179,10 @@ mod tests {
         for (player_idx, &assigned) in all_symbols.iter().enumerate() {
             for (other_idx, &other) in all_symbols.iter().enumerate() {
                 if player_idx == other_idx {
-                    assert_eq!(assigned, other, "player {player_idx} symbol must equal itself");
+                    assert_eq!(
+                        assigned, other,
+                        "player {player_idx} symbol must equal itself"
+                    );
                 } else {
                     assert_ne!(
                         assigned, other,
@@ -244,18 +252,30 @@ mod tests {
             )
         };
 
-        assert!(is_valid_transition(GameStatus::Pending, GameStatus::Ongoing));
+        assert!(is_valid_transition(
+            GameStatus::Pending,
+            GameStatus::Ongoing
+        ));
         assert!(is_valid_transition(GameStatus::Ongoing, GameStatus::Ended));
 
         // Illegal transitions
         assert!(!is_valid_transition(GameStatus::Ended, GameStatus::Ongoing));
-        assert!(!is_valid_transition(GameStatus::Ongoing, GameStatus::Pending));
+        assert!(!is_valid_transition(
+            GameStatus::Ongoing,
+            GameStatus::Pending
+        ));
         assert!(!is_valid_transition(GameStatus::Ended, GameStatus::Pending));
         assert!(!is_valid_transition(GameStatus::Pending, GameStatus::Ended));
 
         // Self-transition is also illegal
-        assert!(!is_valid_transition(GameStatus::Pending, GameStatus::Pending));
-        assert!(!is_valid_transition(GameStatus::Ongoing, GameStatus::Ongoing));
+        assert!(!is_valid_transition(
+            GameStatus::Pending,
+            GameStatus::Pending
+        ));
+        assert!(!is_valid_transition(
+            GameStatus::Ongoing,
+            GameStatus::Ongoing
+        ));
         assert!(!is_valid_transition(GameStatus::Ended, GameStatus::Ended));
     }
 

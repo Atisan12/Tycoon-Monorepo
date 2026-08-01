@@ -41,7 +41,7 @@ mod tests {
         // 4. Admin withdraws from game contract
         let withdraw: u128 = 50_000_000_000_000_000_000_000;
         let game_before = f.tyc_balance(&f.game_id);
-        f.game.withdraw_funds(&f.tyc_id, &f.admin, &withdraw);
+        f.game.admin_withdraw_funds(&f.tyc_id, &f.admin, &withdraw);
         assert_eq!(f.tyc_balance(&f.game_id), game_before - withdraw as i128);
     }
 
@@ -97,7 +97,8 @@ mod tests {
         f.reward.redeem_voucher_from(&f.player_a, &tid);
 
         let withdraw: u128 = 1_000_000_000_000_000_000_000;
-        f.game.withdraw_funds(&f.tyc_id, &f.player_b, &withdraw);
+        f.game
+            .admin_withdraw_funds(&f.tyc_id, &f.player_b, &withdraw);
 
         assert_eq!(f.tyc_balance(&f.player_a), value as i128);
         assert_eq!(f.tyc_balance(&f.player_b), withdraw as i128);
@@ -121,7 +122,7 @@ mod tests {
         let game_before = f.tyc_balance(&f.game_id);
         let reward_before = f.tyc_balance(&f.reward_id);
 
-        f.game.withdraw_funds(&f.tyc_id, &f.admin, &gw);
+        f.game.admin_withdraw_funds(&f.tyc_id, &f.admin, &gw);
         f.reward.withdraw_funds(&f.tyc_id, &f.admin, &rw);
 
         assert_eq!(f.tyc_balance(&f.game_id), game_before - gw as i128);

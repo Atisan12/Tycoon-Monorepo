@@ -70,7 +70,7 @@ mod tests {
 
         fund(&env, &tyc_id, &contract_id, 1_000);
         let recipient = Address::generate(&env);
-        client.withdraw_funds(&tyc_id, &recipient, &750);
+        client.admin_withdraw_funds(&tyc_id, &recipient, &750);
 
         let events = env.events().all();
         assert!(
@@ -102,8 +102,8 @@ mod tests {
         fund(&env, &usdc_id, &contract_id, 3_000);
 
         let recipient = Address::generate(&env);
-        client.withdraw_funds(&tyc_id, &recipient, &2_000);
-        client.withdraw_funds(&usdc_id, &recipient, &1_000);
+        client.admin_withdraw_funds(&tyc_id, &recipient, &2_000);
+        client.admin_withdraw_funds(&usdc_id, &recipient, &1_000);
 
         assert_eq!(
             TokenClient::new(&env, &tyc_id).balance(&contract_id),
@@ -212,7 +212,7 @@ mod tests {
             );
         });
 
-        client.migrate();
+        client.admin_migrate();
 
         env.as_contract(&contract_id, || {
             assert_eq!(
@@ -223,7 +223,7 @@ mod tests {
         });
 
         // Second migrate at v1 must be a no-op (no panic, version unchanged).
-        client.migrate();
+        client.admin_migrate();
 
         env.as_contract(&contract_id, || {
             assert_eq!(

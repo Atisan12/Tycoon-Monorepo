@@ -366,8 +366,6 @@ impl TycoonCollectibles {
         Ok(())
     }
 
-
-
     pub fn buy_collectible(
         env: Env,
         buyer: Address,
@@ -829,9 +827,9 @@ mod errors_tests;
 #[cfg(test)]
 mod events_tests;
 #[cfg(test)]
-mod lib_tests;
-#[cfg(test)]
 mod issues_1053_1056_tests;
+#[cfg(test)]
+mod lib_tests;
 #[cfg(test)]
 mod pause_tests;
 #[cfg(test)]

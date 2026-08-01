@@ -255,14 +255,14 @@ mod tests {
         // withdraw_funds shim
         StellarAssetClient::new(&env, &tyc_id).mint(&contract_id, &500);
         let recipient = Address::generate(&env);
-        client.withdraw_funds(&tyc_id, &recipient, &200);
+        client.admin_withdraw_funds(&tyc_id, &recipient, &200);
         assert_eq!(
             soroban_sdk::token::TokenClient::new(&env, &tyc_id).balance(&recipient),
             200
         );
 
         // migrate shim
-        client.migrate();
+        client.admin_migrate();
         assert_eq!(client.export_state().state_version, 1);
     }
 

@@ -1,4 +1,3 @@
-#![cfg(test)]
 //! SW-CT-ENM-001: Targeted coverage tests for tycoon-collectibles enumeration.rs
 //!
 //! Covers every public function and edge-case branch in `enumeration.rs`:
@@ -238,7 +237,7 @@ fn test_buying_more_of_existing_token_does_not_duplicate_in_list() {
 
     client.buy_collectible(&user, &7, &1);
     client.buy_collectible(&user, &7, &4); // adding more of same token
-    // Token 7 should appear exactly once in the enumeration list
+                                           // Token 7 should appear exactly once in the enumeration list
     assert_eq!(client.owned_token_count(&user), 1);
     assert_eq!(client.balance_of(&user, &7), 5);
 }
@@ -318,7 +317,10 @@ fn test_tokens_of_owner_page_exceeds_max_returns_error() {
 
     // page_size > MAX_PAGE_SIZE (100) must be rejected
     let result = client.try_tokens_of_owner_page(&user, &0, &101);
-    assert!(result.is_err(), "page_size > MAX_PAGE_SIZE must return error");
+    assert!(
+        result.is_err(),
+        "page_size > MAX_PAGE_SIZE must return error"
+    );
 }
 
 #[test]
@@ -496,11 +498,11 @@ fn test_pagination_max_page_size_returns_full_batch() {
     }
 
     // Page 0 with MAX_PAGE_SIZE (100) returns 100 tokens
-    let page0 = client.tokens_of_owner_page(&user, &0, &100).unwrap();
+    let page0 = client.tokens_of_owner_page(&user, &0, &100);
     assert_eq!(page0.len(), 100, "page 0 must return MAX_PAGE_SIZE tokens");
 
     // Page 1 returns remaining 50
-    let page1 = client.tokens_of_owner_page(&user, &1, &100).unwrap();
+    let page1 = client.tokens_of_owner_page(&user, &1, &100);
     assert_eq!(page1.len(), 50, "page 1 must return remaining 50 tokens");
 }
 
@@ -515,7 +517,10 @@ fn test_pagination_page_size_exceeds_max_returns_error() {
     client.buy_collectible(&user, &1, &1);
 
     let result = client.try_tokens_of_owner_page(&user, &0, &101);
-    assert!(result.is_err(), "page_size > MAX_PAGE_SIZE must return error");
+    assert!(
+        result.is_err(),
+        "page_size > MAX_PAGE_SIZE must return error"
+    );
 }
 
 /// tokens_of_owner_page with page_size=0 returns error.
@@ -543,7 +548,7 @@ fn test_pagination_out_of_bounds_page_returns_empty() {
     client.buy_collectible(&user, &5, &1);
 
     // Page 10 is way out of bounds for 1 token
-    let page = client.tokens_of_owner_page(&user, &10, &10).unwrap();
+    let page = client.tokens_of_owner_page(&user, &10, &10);
     assert_eq!(page.len(), 0, "out-of-bounds page must return empty Vec");
 }
 
@@ -555,7 +560,7 @@ fn test_pagination_empty_owner_returns_empty() {
     let (client, _) = setup(&env);
     let user = Address::generate(&env);
 
-    let page = client.tokens_of_owner_page(&user, &0, &10).unwrap();
+    let page = client.tokens_of_owner_page(&user, &0, &10);
     assert_eq!(page.len(), 0, "empty owner page must be empty");
 }
 
@@ -600,14 +605,17 @@ fn test_iterate_has_more_across_pages() {
 
     loop {
         let (batch, has_more) = client.iterate_owned_tokens(&user, &start, &batch_size);
-        total_collected += batch.len() as u32;
+        total_collected += batch.len();
         if !has_more {
             break;
         }
         start += batch_size;
     }
 
-    assert_eq!(total_collected, 10, "must collect all 10 tokens across iterations");
+    assert_eq!(
+        total_collected, 10,
+        "must collect all 10 tokens across iterations"
+    );
 }
 
 /// token_of_owner_by_index on empty owner panics (consistent with existing behavior).

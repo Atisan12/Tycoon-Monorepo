@@ -146,14 +146,12 @@ impl MigrationGuard {
     /// Returns `true` if the time-lock has expired and the upgrade can
     /// be executed at `current_ledger`.
     pub fn is_executable(&self, current_ledger: u32) -> bool {
-        self.state == MigrationState::Pending
-            && current_ledger >= self.earliest_execute_ledger
+        self.state == MigrationState::Pending && current_ledger >= self.earliest_execute_ledger
     }
 
     /// Returns `true` if the proposal is still in the time-lock window.
     pub fn is_locked(&self, current_ledger: u32) -> bool {
-        self.state == MigrationState::Pending
-            && current_ledger < self.earliest_execute_ledger
+        self.state == MigrationState::Pending && current_ledger < self.earliest_execute_ledger
     }
 }
 
@@ -217,21 +215,33 @@ mod tests {
     #[test]
     fn test_migration_key_invalid_successor_same_version() {
         let v1 = MigrationKey::initial(100);
-        let same = MigrationKey { version: 1, set_at_ledger: 200 };
+        let same = MigrationKey {
+            version: 1,
+            set_at_ledger: 200,
+        };
         assert!(!v1.is_valid_successor(&same));
     }
 
     #[test]
     fn test_migration_key_invalid_successor_skip_version() {
         let v1 = MigrationKey::initial(100);
-        let skip = MigrationKey { version: 3, set_at_ledger: 200 };
+        let skip = MigrationKey {
+            version: 3,
+            set_at_ledger: 200,
+        };
         assert!(!v1.is_valid_successor(&skip));
     }
 
     #[test]
     fn test_migration_key_invalid_successor_older_ledger() {
-        let v1 = MigrationKey { version: 1, set_at_ledger: 200 };
-        let regressed = MigrationKey { version: 2, set_at_ledger: 100 };
+        let v1 = MigrationKey {
+            version: 1,
+            set_at_ledger: 200,
+        };
+        let regressed = MigrationKey {
+            version: 2,
+            set_at_ledger: 100,
+        };
         assert!(!v1.is_valid_successor(&regressed));
     }
 
@@ -362,8 +372,10 @@ mod tests {
 
     #[test]
     fn test_constants_are_consistent() {
-        assert!(DEFAULT_UPGRADE_DELAY >= MIN_UPGRADE_DELAY_LEDGERS);
-        assert!(MIN_UPGRADE_DELAY_LEDGERS > 0);
+        let default_delay = DEFAULT_UPGRADE_DELAY;
+        let min_delay = MIN_UPGRADE_DELAY_LEDGERS;
+        assert!(default_delay >= min_delay);
+        assert!(min_delay > 0);
         assert_eq!(INITIAL_STATE_VERSION, 1);
     }
 

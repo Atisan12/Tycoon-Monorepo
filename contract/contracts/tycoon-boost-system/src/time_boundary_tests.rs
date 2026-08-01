@@ -230,7 +230,7 @@ fn test_get_active_boosts_filters_expired() {
 
     set_seq(&env, 50);
     client.add_boost(&player, &additive(1, 500, 100)); // expires at 100
-    client.add_boost(&player, &additive(2, 200, 0));   // never expires
+    client.add_boost(&player, &additive(2, 200, 0)); // never expires
 
     set_seq(&env, 100); // boost 1 is now expired (100 <= 100)
     let active = client.get_active_boosts(&player);
@@ -261,9 +261,9 @@ fn test_prune_expired_boosts_returns_count() {
     let (client, player) = setup(&env);
 
     set_seq(&env, 50);
-    client.add_boost(&player, &additive(1, 500, 100));  // expires at 100
-    client.add_boost(&player, &additive(2, 300, 150));  // expires at 150
-    client.add_boost(&player, &additive(3, 200, 0));    // never expires
+    client.add_boost(&player, &additive(1, 500, 100)); // expires at 100
+    client.add_boost(&player, &additive(2, 300, 150)); // expires at 150
+    client.add_boost(&player, &additive(3, 200, 0)); // never expires
 
     set_seq(&env, 200); // boosts 1 and 2 are both expired
     let removed = client.prune_expired_boosts(&player);
@@ -281,9 +281,9 @@ fn test_mixed_expiry_only_active_contribute() {
 
     set_seq(&env, 50);
     client.add_boost(&player, &additive(1, 1000, 100)); // expires at 100: +10%
-    client.add_boost(&player, &additive(2, 500, 0));    // never expires: +5%
+    client.add_boost(&player, &additive(2, 500, 0)); // never expires: +5%
 
     set_seq(&env, 100); // boost 1 expired
-    // Only boost 2 active: 10000 * (1 + 0.05) = 10500
+                        // Only boost 2 active: 10000 * (1 + 0.05) = 10500
     assert_eq!(client.calculate_total_boost(&player), 10500);
 }

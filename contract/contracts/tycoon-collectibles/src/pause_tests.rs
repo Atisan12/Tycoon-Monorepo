@@ -15,8 +15,6 @@
 //! Read-only queries verified to pass while paused:
 //!   - is_contract_paused, balance_of, get_stock, get_token_perk, tokens_of
 
-#![cfg(test)]
-
 extern crate std;
 
 use crate::{CollectibleError, TycoonCollectibles, TycoonCollectiblesClient};
@@ -37,9 +35,15 @@ fn make_token(env: &Env, admin: &Address) -> Address {
         .address()
 }
 
-fn assert_paused_err(result: Result<impl core::fmt::Debug, Result<CollectibleError, soroban_sdk::InvokeError>>) {
+fn assert_paused_err(
+    result: Result<impl core::fmt::Debug, Result<CollectibleError, soroban_sdk::InvokeError>>,
+) {
     match result {
-        Err(Ok(e)) => assert_eq!(e, CollectibleError::ContractPaused, "expected ContractPaused"),
+        Err(Ok(e)) => assert_eq!(
+            e,
+            CollectibleError::ContractPaused,
+            "expected ContractPaused"
+        ),
         other => panic!("expected ContractPaused error, got {:?}", other),
     }
 }

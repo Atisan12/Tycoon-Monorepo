@@ -174,7 +174,7 @@ fn test_mixed_one_expired_one_active_at_boundary() {
 
     set_seq(&env, 50);
     client.add_boost(&player, &additive(1, 1000, 100)); // expires at 100: +10%
-    client.add_boost(&player, &additive(2, 500, 200));  // expires at 200: +5%
+    client.add_boost(&player, &additive(2, 500, 200)); // expires at 200: +5%
 
     // At ledger 100: boost 1 expired, boost 2 still active
     set_seq(&env, 100);
@@ -219,7 +219,7 @@ fn test_sentinel_plus_expiring_boost_at_boundary() {
     let (client, player) = setup(&env);
 
     set_seq(&env, 1);
-    client.add_boost(&player, &additive(1, 500, 0));   // never expires: +5%
+    client.add_boost(&player, &additive(1, 500, 0)); // never expires: +5%
     client.add_boost(&player, &additive(2, 1000, 100)); // expires at 100: +10%
 
     // At 99: both active → 10000 * (1 + 0.15) = 11500
@@ -282,7 +282,7 @@ fn test_get_active_boosts_treats_exact_expiry_as_expired() {
 
     set_seq(&env, 10);
     client.add_boost(&player, &additive(1, 1000, 100)); // expires at 100
-    client.add_boost(&player, &additive(2, 500, 0));    // never expires
+    client.add_boost(&player, &additive(2, 500, 0)); // never expires
 
     set_seq(&env, 100);
     let active = client.get_active_boosts(&player);
@@ -325,7 +325,7 @@ fn test_prune_removes_boost_at_exact_expiry_ledger() {
 
     set_seq(&env, 10);
     client.add_boost(&player, &additive(1, 1000, 100)); // expires at 100
-    client.add_boost(&player, &additive(2, 500, 0));    // never expires
+    client.add_boost(&player, &additive(2, 500, 0)); // never expires
 
     set_seq(&env, 100); // boost 1 expired
     let removed = client.prune_expired_boosts(&player);
@@ -345,7 +345,7 @@ fn test_calculate_total_boost_after_prune_at_boundary() {
 
     set_seq(&env, 1);
     client.add_boost(&player, &additive(1, 2000, 50)); // expires at 50: +20%
-    client.add_boost(&player, &additive(2, 500, 0));   // never expires: +5%
+    client.add_boost(&player, &additive(2, 500, 0)); // never expires: +5%
 
     set_seq(&env, 50);
     client.prune_expired_boosts(&player);

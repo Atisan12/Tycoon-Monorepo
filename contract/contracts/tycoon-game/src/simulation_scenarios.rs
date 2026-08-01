@@ -256,7 +256,7 @@ mod tests {
         fund(&env, &tyc_id, &contract_id, total);
 
         let recipient = Address::generate(&env);
-        client.withdraw_funds(&tyc_id, &recipient, &(total as u128));
+        client.admin_withdraw_funds(&tyc_id, &recipient, &(total as u128));
 
         assert_eq!(TokenClient::new(&env, &tyc_id).balance(&contract_id), 0);
         assert_eq!(TokenClient::new(&env, &tyc_id).balance(&recipient), total);
@@ -275,7 +275,7 @@ mod tests {
         fund(&env, &tyc_id, &contract_id, total);
 
         let recipient = Address::generate(&env);
-        client.withdraw_funds(&tyc_id, &recipient, &0);
+        client.admin_withdraw_funds(&tyc_id, &recipient, &0);
 
         assert_eq!(TokenClient::new(&env, &tyc_id).balance(&contract_id), total);
         assert_eq!(TokenClient::new(&env, &tyc_id).balance(&recipient), 0);

@@ -1,4 +1,3 @@
-#![cfg(test)]
 //! SW-CT-EVT-001: Event-emission coverage tests for tycoon-collectibles events.rs
 //!
 //! Each test drives the contract through a code path that calls one of the
@@ -64,9 +63,9 @@ fn test_transfer_event_emitted_on_transfer() {
 
     let events = env.events().all();
     // Find the transfer event by topic keyword
-    let transfer_event = events
-        .iter()
-        .find(|(_, topic, _)| topic == &(symbol_short!("transfer"), alice.clone(), bob.clone()).into_val(&env));
+    let transfer_event = events.iter().find(|(_, topic, _)| {
+        topic == &(symbol_short!("transfer"), alice.clone(), bob.clone()).into_val(&env)
+    });
 
     assert!(
         transfer_event.is_some(),
@@ -87,9 +86,9 @@ fn test_transfer_event_data_contains_token_id_and_amount() {
     client.transfer(&alice, &bob, &42, &7);
 
     let events = env.events().all();
-    let transfer_event = events
-        .iter()
-        .find(|(_, topic, _)| topic == &(symbol_short!("transfer"), alice.clone(), bob.clone()).into_val(&env));
+    let transfer_event = events.iter().find(|(_, topic, _)| {
+        topic == &(symbol_short!("transfer"), alice.clone(), bob.clone()).into_val(&env)
+    });
 
     assert!(transfer_event.is_some());
     let (_, _, data) = transfer_event.unwrap();
@@ -111,12 +110,9 @@ fn test_stocked_event_emitted_on_stock_shop() {
     client.stock_shop(&10, &1, &3, &1000, &500);
 
     let events = env.events().all();
-    let stocked = events
-        .iter()
-        .find(|(_, topic, _)| {
-            topic
-                == &(symbol_short!("stock"), symbol_short!("new")).into_val(&env)
-        });
+    let stocked = events.iter().find(|(_, topic, _)| {
+        topic == &(symbol_short!("stock"), symbol_short!("new")).into_val(&env)
+    });
     assert!(stocked.is_some(), "stocked event must be emitted");
 }
 
@@ -201,12 +197,9 @@ fn test_price_updated_event_emitted() {
     client.update_collectible_prices(&token_id, &500, &100);
 
     let events = env.events().all();
-    let price_ev = events
-        .iter()
-        .find(|(_, topic, _)| {
-            topic
-                == &(symbol_short!("price"), symbol_short!("update")).into_val(&env)
-        });
+    let price_ev = events.iter().find(|(_, topic, _)| {
+        topic == &(symbol_short!("price"), symbol_short!("update")).into_val(&env)
+    });
     assert!(price_ev.is_some(), "price_updated event must be emitted");
 }
 
@@ -306,13 +299,7 @@ fn test_burned_event_emitted_on_burn_for_perk() {
 
     let events = env.events().all();
     let burned = events.iter().find(|(_, topic, _)| {
-        topic
-            == &(
-                symbol_short!("burn"),
-                symbol_short!("coll"),
-                user.clone(),
-            )
-                .into_val(&env)
+        topic == &(symbol_short!("burn"), symbol_short!("coll"), user.clone()).into_val(&env)
     });
     assert!(burned.is_some(), "burn event must be emitted");
 }
@@ -333,13 +320,7 @@ fn test_cash_perk_event_emitted_for_cash_tiered() {
 
     let events = env.events().all();
     let cash_ev = events.iter().find(|(_, topic, _)| {
-        topic
-            == &(
-                symbol_short!("perk"),
-                symbol_short!("cash"),
-                user.clone(),
-            )
-                .into_val(&env)
+        topic == &(symbol_short!("perk"), symbol_short!("cash"), user.clone()).into_val(&env)
     });
     assert!(
         cash_ev.is_some(),
@@ -364,13 +345,7 @@ fn test_cash_perk_event_data_contains_cash_value() {
     let cash_ev = events
         .iter()
         .find(|(_, topic, _)| {
-            topic
-                == &(
-                    symbol_short!("perk"),
-                    symbol_short!("cash"),
-                    user.clone(),
-                )
-                    .into_val(&env)
+            topic == &(symbol_short!("perk"), symbol_short!("cash"), user.clone()).into_val(&env)
         })
         .unwrap();
 
@@ -395,13 +370,7 @@ fn test_cash_perk_event_emitted_for_tax_refund() {
 
     let events = env.events().all();
     let cash_ev = events.iter().find(|(_, topic, _)| {
-        topic
-            == &(
-                symbol_short!("perk"),
-                symbol_short!("cash"),
-                user.clone(),
-            )
-                .into_val(&env)
+        topic == &(symbol_short!("perk"), symbol_short!("cash"), user.clone()).into_val(&env)
     });
     assert!(
         cash_ev.is_some(),

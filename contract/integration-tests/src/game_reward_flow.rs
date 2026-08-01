@@ -170,7 +170,7 @@ mod tests {
     #[test]
     fn game_migrate_is_idempotent() {
         let f = Fixture::new();
-        f.game.migrate();
+        f.game.admin_migrate();
         let dump = f.game.export_state();
         assert_eq!(
             dump.state_version, 1,

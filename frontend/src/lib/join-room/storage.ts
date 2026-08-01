@@ -29,7 +29,7 @@ export function getLastJoinCode(): string | null {
  */
 export function clearLastJoinCode(): void {
   if (typeof window === "undefined") {
-    return null;
+    return;
   }
   sessionStorage.removeItem(JOIN_ROOM_STORAGE_KEY);
 }

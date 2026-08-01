@@ -11,7 +11,8 @@ import {
   MissingRequiredFieldException,
   InvalidChanceTypeException,
 } from './exceptions/chance-exceptions';
-import { RANDOM_PROVIDER, RandomProvider, SecureRandomProvider } from '../../common/random-provider';
+import { RANDOM_PROVIDER } from '../../common/random-provider';
+import type { RandomProvider } from '../../common/random-provider';
 import { ChanceObservabilityService } from './chance-observability.service';
 
 @Injectable()
@@ -20,30 +21,32 @@ export class ChanceService {
     @InjectRepository(Chance)
     private readonly chanceRepository: Repository<Chance>,
     private readonly observability: ChanceObservabilityService,
+    private readonly paginationService: PaginationService,
     @Inject(RANDOM_PROVIDER)
     private readonly rng: RandomProvider,
   ) {}
 
-  async findAll(page?: number, limit?: number): Promise<Chance[]> {
+  async findAll(
+    queryDto: ListChancesQueryDto,
+  ): Promise<PaginatedResponse<Chance>> {
     const action = 'chance.list';
-    const sanitizedInput = { page: page ?? 1, limit: limit ?? 20 };
+    const sanitizedInput = {
+      page: queryDto.page ?? 1,
+      limit: queryDto.limit ?? 10,
+    };
     const startedAt = Date.now();
     this.observability.logOperationStart(action, sanitizedInput);
 
     try {
-      const take = limit || 20;
-      const skip = page && page > 0 ? (page - 1) * take : 0;
-
-      const data = await this.chanceRepository.find({
-        order: { id: 'ASC' },
-        take,
-        skip,
-      });
+      const qb = this.chanceRepository.createQueryBuilder('chance');
+      const result = await this.paginationService.paginate(qb, queryDto, [
+        'instruction',
+      ], ['id', 'type', 'amount', 'position', 'createdAt', 'updatedAt']);
 
       this.observability.logOperationSuccess(action, Date.now() - startedAt, {
-        count: data.length,
+        count: result.data.length,
       });
-      return data;
+      return result;
     } catch (err) {
       this.observability.logOperationError(action, err as Error);
       throw err;

@@ -81,7 +81,7 @@ fn test_withdraw_tyc_by_owner_success() {
 
     let recipient = Address::generate(&env);
 
-    client.withdraw_funds(&tyc_token, &recipient, &500);
+    client.admin_withdraw_funds(&tyc_token, &recipient, &500);
 
     let tyc_client = TokenClient::new(&env, &tyc_token);
     assert_eq!(tyc_client.balance(&recipient), 500);
@@ -105,7 +105,7 @@ fn test_withdraw_usdc_by_owner_success() {
 
     let recipient = Address::generate(&env);
 
-    client.withdraw_funds(&usdc_token, &recipient, &1500);
+    client.admin_withdraw_funds(&usdc_token, &recipient, &1500);
 
     let usdc_client = TokenClient::new(&env, &usdc_token);
     assert_eq!(usdc_client.balance(&recipient), 1500);
@@ -132,7 +132,7 @@ fn test_withdraw_insufficient_balance_fails() {
     let recipient = Address::generate(&env);
 
     // Try to withdraw more than available - should panic
-    client.withdraw_funds(&tyc_token, &recipient, &500);
+    client.admin_withdraw_funds(&tyc_token, &recipient, &500);
 }
 
 #[test]
@@ -151,7 +151,7 @@ fn test_withdraw_invalid_token_fails() {
     let other_token = Address::generate(&env);
     let recipient = Address::generate(&env);
 
-    client.withdraw_funds(&other_token, &recipient, &100);
+    client.admin_withdraw_funds(&other_token, &recipient, &100);
 }
 
 #[test]
@@ -172,7 +172,7 @@ fn test_withdraw_emits_event() {
     let recipient = Address::generate(&env);
 
     // Withdraw funds
-    client.withdraw_funds(&tyc_token, &recipient, &500);
+    client.admin_withdraw_funds(&tyc_token, &recipient, &500);
 
     // Verify event was emitted
     let events = env.events().all();
@@ -404,7 +404,7 @@ fn test_full_contract_flow() {
 
     let tyc_client = TokenClient::new(&env, &tyc_token);
     let recipient = Address::generate(&env);
-    client.withdraw_funds(&tyc_token, &recipient, &3000);
+    client.admin_withdraw_funds(&tyc_token, &recipient, &3000);
 
     assert_eq!(tyc_client.balance(&recipient), 3000);
     assert_eq!(tyc_client.balance(&contract_id), 7000);
@@ -694,7 +694,7 @@ fn test_migrate_is_idempotent_at_version_1() {
     client.initialize(&tyc_token, &usdc_token, &owner, &reward_system);
 
     // migrate at v1 is a no-op placeholder — must not panic
-    client.migrate();
+    client.admin_migrate();
 
     let dump = client.export_state();
     assert_eq!(
@@ -732,7 +732,7 @@ fn test_migrate_from_v0_to_v1() {
         // state_version is intentionally NOT set → get_state_version returns 0
     });
 
-    client.migrate();
+    client.admin_migrate();
 
     // After migrate the version must be 1
     env.as_contract(&contract_id, || {
@@ -825,7 +825,7 @@ fn test_withdraw_funds_amount_overflow_fails() {
     let recipient = Address::generate(&env);
     // i128::MAX + 1
     let huge_amount = i128::MAX as u128 + 1;
-    client.withdraw_funds(&tyc_token, &recipient, &huge_amount);
+    client.admin_withdraw_funds(&tyc_token, &recipient, &huge_amount);
 }
 
 #[test]

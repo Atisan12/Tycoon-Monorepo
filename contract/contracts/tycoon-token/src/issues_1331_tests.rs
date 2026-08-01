@@ -101,7 +101,10 @@ fn old_admin_cannot_mint_after_rotation() {
         client.mint(&recipient, &1);
     }));
 
-    assert!(res.is_err(), "Old admin must not be able to mint after rotation");
+    assert!(
+        res.is_err(),
+        "Old admin must not be able to mint after rotation"
+    );
     assert_eq!(
         client.total_supply(),
         supply_before,
@@ -200,10 +203,7 @@ fn non_admin_cannot_call_set_admin() {
         client.set_admin(&target);
     }));
 
-    assert!(
-        res.is_err(),
-        "Non-admin must not be able to call set_admin"
-    );
+    assert!(res.is_err(), "Non-admin must not be able to call set_admin");
     assert_eq!(
         client.admin(),
         admin_before,
