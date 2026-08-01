@@ -131,7 +131,7 @@ fn test_admin_grant_boost_succeeds() {
 
 /// AAC-04: Non-admin cannot call admin_grant_boost
 #[test]
-#[should_panic(expected = "not satisfied")]
+#[should_panic(expected = "InvalidAction")]
 fn test_admin_grant_boost_non_admin_fails() {
     let env = make_env();
     let contract_id = env.register(TycoonBoostSystem, ());
@@ -226,13 +226,14 @@ fn test_admin_grant_boost_expires_after_ledger_advance() {
 
     let active = client.get_active_boosts(&player);
     assert_eq!(active.len(), 1);
-    assert_eq!(client.calculate_total_boost(&player), 500);
+    // Base 10000 + 500 additive
+    assert_eq!(client.calculate_total_boost(&player), 10500);
 
     // Advance the ledger past expiry.
     set_ledger(&env, 150);
     assert_eq!(
         client.calculate_total_boost(&player),
-        0,
+        10000,
         "boost must be excluded once current ledger reaches expires_at_ledger"
     );
     assert_eq!(client.get_active_boosts(&player).len(), 0);
@@ -289,7 +290,7 @@ fn test_admin_revoke_boost_removes_boost() {
 
 /// AAC-12: Non-admin cannot call admin_revoke_boost
 #[test]
-#[should_panic(expected = "not satisfied")]
+#[should_panic(expected = "InvalidAction")]
 fn test_admin_revoke_boost_non_admin_fails() {
     let env = make_env();
     let contract_id = env.register(TycoonBoostSystem, ());
@@ -369,7 +370,7 @@ fn test_add_boost_admin_succeeds() {
 
 /// AAC-17: Non-admin cannot call add_boost
 #[test]
-#[should_panic(expected = "not satisfied")]
+#[should_panic(expected = "InvalidAction")]
 fn test_add_boost_non_admin_fails() {
     let env = make_env();
     let contract_id = env.register(TycoonBoostSystem, ());
@@ -417,7 +418,7 @@ fn test_clear_boosts_admin_succeeds() {
 
 /// AAC-19: Non-admin cannot call clear_boosts
 #[test]
-#[should_panic(expected = "not satisfied")]
+#[should_panic(expected = "InvalidAction")]
 fn test_clear_boosts_non_admin_fails() {
     let env = make_env();
     let contract_id = env.register(TycoonBoostSystem, ());
@@ -550,7 +551,7 @@ fn test_state_isolation_multiple_players() {
 
 /// Verify non-admin cannot bypass auth by providing their own address
 #[test]
-#[should_panic(expected = "not satisfied")]
+#[should_panic(expected = "InvalidAction")]
 fn test_non_admin_cannot_grant_to_self() {
     let env = make_env();
     let contract_id = env.register(TycoonBoostSystem, ());

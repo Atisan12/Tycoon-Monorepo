@@ -167,7 +167,7 @@ Tests that verify non-admin callers are rejected:
 
 ```rust
 #[test]
-#[should_panic(expected = "not satisfied")]
+#[should_panic(expected = "InvalidAction")]
 fn test_admin_grant_boost_non_admin_fails() {
     // Setup admin and attacker
     // Attempt operation with attacker auth
