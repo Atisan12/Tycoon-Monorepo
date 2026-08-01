@@ -85,7 +85,7 @@ build-wasm:
 	@echo "Running wasm-opt -Oz on release artifacts..."
 	@for wasm in $(RELEASE_WASM_DIR)/*.wasm; do \
 	  echo "  wasm-opt $$wasm"; \
-	  wasm-opt -Oz --output $$wasm $$wasm; \
+	  wasm-opt -Oz --enable-sign-ext --output $$wasm $$wasm; \
 	done
 	@echo "wasm-opt pass complete"
 
