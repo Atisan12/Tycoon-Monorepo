@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "updated": "2026-08-01",
   "regression_threshold_percent": 3,
   "contracts": {
@@ -16,12 +16,12 @@
       "justification": "Initial recorded baseline"
     },
     "tycoon_game.wasm": {
-      "baseline_bytes": 35842,
-      "justification": "Growth from game contract changes (events, treasury, storage) plus SDK/toolchain; rebaselined after wasm-opt -Oz --enable-sign-ext"
+      "baseline_bytes": 36285,
+      "justification": "Rebaselined to CI apt binaryen 108 wasm-opt -Oz --enable-sign-ext size after game contract changes (events, treasury, storage) and SDK/toolchain"
     },
     "tycoon_collectibles.wasm": {
-      "baseline_bytes": 34962,
-      "justification": "Growth from collectibles contract changes (auth, enumeration, pause, events) plus SDK/toolchain; rebaselined after wasm-opt -Oz --enable-sign-ext"
+      "baseline_bytes": 51579,
+      "justification": "Rebaselined to CI apt binaryen 108 wasm-opt -Oz --enable-sign-ext size after collectibles changes (auth, enumeration, pause, events) and SDK/toolchain; prior baseline used a newer binaryen that over-optimised vs CI"
     }
   }
 }
