@@ -41,14 +41,13 @@ mod tests {
     fn owner_withdraws_usdc() {
         let f = Fixture::new();
         let recipient = Address::generate(&f.env);
-        let usdc_fund: i128 = 10_000_000;
         let withdraw: u128 = 5_000_000;
-        StellarAssetClient::new(&f.env, &f.usdc_id).mint(&f.game_id, &usdc_fund);
+        // Fixture already seeds DEFAULT_USDC_GAME_FUND into the game contract
+        let before = f.usdc_balance(&f.game_id);
         f.game
             .admin_withdraw_funds(&f.usdc_id, &recipient, &withdraw);
-        let usdc = soroban_sdk::token::Client::new(&f.env, &f.usdc_id);
-        assert_eq!(usdc.balance(&recipient), withdraw as i128);
-        assert_eq!(usdc.balance(&f.game_id), usdc_fund - withdraw as i128);
+        assert_eq!(f.usdc_balance(&recipient), withdraw as i128);
+        assert_eq!(f.usdc_balance(&f.game_id), before - withdraw as i128);
     }
 
     #[test]

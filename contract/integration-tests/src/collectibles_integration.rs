@@ -70,17 +70,17 @@ mod tests {
     fn mint_collectible_generates_unique_token_id() {
         let f = Fixture::new();
         f.collectibles.set_backend_minter(&f.backend);
-        // mint_collectible(caller, to, perk=0, strength=1)
-        // Perk::None == 0 in the enum; strength 1 is valid
+        // mint_collectible(caller, to, perk, strength)
+        // Perk::None (0) is invalid; use RentBoost (3), strength unused for non-tiered
         let id1 = f
             .collectibles
-            .mint_collectible(&f.admin, &f.player_a, &0u32, &1u32);
+            .mint_collectible(&f.admin, &f.player_a, &3u32, &0u32);
         let id2 = f
             .collectibles
-            .mint_collectible(&f.admin, &f.player_b, &0u32, &1u32);
+            .mint_collectible(&f.admin, &f.player_b, &3u32, &0u32);
         let id3 = f
             .collectibles
-            .mint_collectible(&f.admin, &f.player_c, &0u32, &1u32);
+            .mint_collectible(&f.admin, &f.player_c, &3u32, &0u32);
         assert_ne!(id1, id2);
         assert_ne!(id2, id3);
         assert_ne!(id1, id3);
@@ -422,10 +422,10 @@ mod tests {
 
         let id1 = f
             .collectibles
-            .mint_collectible(&f.admin, &f.player_a, &0u32, &1u32);
+            .mint_collectible(&f.admin, &f.player_a, &3u32, &0u32);
         let id2 = f
             .collectibles
-            .mint_collectible(&f.admin, &f.player_a, &0u32, &1u32);
+            .mint_collectible(&f.admin, &f.player_a, &3u32, &0u32);
         assert_eq!(f.collectibles.owned_token_count(&f.player_a), 2);
 
         f.collectibles.burn(&f.player_a, &id1, &1u64);
@@ -442,10 +442,10 @@ mod tests {
         f.collectibles.set_backend_minter(&f.backend);
         let id1 = f
             .collectibles
-            .mint_collectible(&f.admin, &f.player_b, &0u32, &1u32);
+            .mint_collectible(&f.admin, &f.player_b, &3u32, &0u32);
         let id2 = f
             .collectibles
-            .mint_collectible(&f.admin, &f.player_b, &0u32, &1u32);
+            .mint_collectible(&f.admin, &f.player_b, &3u32, &0u32);
 
         let owned = f.collectibles.tokens_of(&f.player_b);
         assert_eq!(owned.len(), 2);
