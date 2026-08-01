@@ -122,7 +122,19 @@ pub fn is_admin(env: &Env, candidate: &Address) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::{testutils::Address as _, Env};
+    use soroban_sdk::{contract, contractimpl, testutils::Address as _, Env};
+
+    #[contract]
+    struct DummyContract;
+
+    #[contractimpl]
+    impl DummyContract {}
+
+    fn setup() -> (Env, Address) {
+        let env = Env::default();
+        let id = env.register(DummyContract, ());
+        (env, id)
+    }
 
     #[test]
     fn test_entrypoint_access_variants_are_distinct() {
@@ -142,69 +154,83 @@ mod tests {
 
     #[test]
     fn test_set_and_get_admin() {
-        let env = Env::default();
+        let (env, id) = setup();
         let admin = Address::generate(&env);
 
-        assert_eq!(get_admin(&env), None);
-        set_admin(&env, &admin);
-        assert_eq!(get_admin(&env), Some(admin.clone()));
+        env.as_contract(&id, || {
+            assert_eq!(get_admin(&env), None);
+            set_admin(&env, &admin);
+            assert_eq!(get_admin(&env), Some(admin.clone()));
+        });
     }
 
     #[test]
     fn test_is_admin_true_for_set_address() {
-        let env = Env::default();
+        let (env, id) = setup();
         let admin = Address::generate(&env);
-        set_admin(&env, &admin);
-        assert!(is_admin(&env, &admin));
+        env.as_contract(&id, || {
+            set_admin(&env, &admin);
+            assert!(is_admin(&env, &admin));
+        });
     }
 
     #[test]
     fn test_is_admin_false_for_different_address() {
-        let env = Env::default();
+        let (env, id) = setup();
         let admin = Address::generate(&env);
         let other = Address::generate(&env);
-        set_admin(&env, &admin);
-        assert!(!is_admin(&env, &other));
+        env.as_contract(&id, || {
+            set_admin(&env, &admin);
+            assert!(!is_admin(&env, &other));
+        });
     }
 
     #[test]
     fn test_is_admin_false_when_not_set() {
-        let env = Env::default();
+        let (env, id) = setup();
         let candidate = Address::generate(&env);
-        assert!(!is_admin(&env, &candidate));
+        env.as_contract(&id, || {
+            assert!(!is_admin(&env, &candidate));
+        });
     }
 
     #[test]
     fn test_set_admin_overwrites_previous() {
-        let env = Env::default();
+        let (env, id) = setup();
         let admin_v1 = Address::generate(&env);
         let admin_v2 = Address::generate(&env);
 
-        set_admin(&env, &admin_v1);
-        assert!(is_admin(&env, &admin_v1));
-        assert!(!is_admin(&env, &admin_v2));
+        env.as_contract(&id, || {
+            set_admin(&env, &admin_v1);
+            assert!(is_admin(&env, &admin_v1));
+            assert!(!is_admin(&env, &admin_v2));
 
-        set_admin(&env, &admin_v2);
-        assert!(!is_admin(&env, &admin_v1));
-        assert!(is_admin(&env, &admin_v2));
+            set_admin(&env, &admin_v2);
+            assert!(!is_admin(&env, &admin_v1));
+            assert!(is_admin(&env, &admin_v2));
+        });
     }
 
     #[test]
     #[should_panic(expected = "Admin not set")]
     fn test_require_admin_panics_when_not_set() {
-        let env = Env::default();
+        let (env, id) = setup();
         env.mock_all_auths();
-        require_admin(&env);
+        env.as_contract(&id, || {
+            require_admin(&env);
+        });
     }
 
     #[test]
     fn test_require_admin_succeeds_with_mock_auth() {
-        let env = Env::default();
+        let (env, id) = setup();
         env.mock_all_auths();
         let admin = Address::generate(&env);
-        set_admin(&env, &admin);
-        let returned = require_admin(&env);
-        assert_eq!(returned, admin);
+        env.as_contract(&id, || {
+            set_admin(&env, &admin);
+            let returned = require_admin(&env);
+            assert_eq!(returned, admin);
+        });
     }
 
     #[test]

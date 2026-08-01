@@ -148,7 +148,13 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::{contracttype, Env};
+    use soroban_sdk::{contract, contractimpl, contracttype, Env};
+
+    #[contract]
+    struct DummyContract;
+
+    #[contractimpl]
+    impl DummyContract {}
 
     #[contracttype]
     #[derive(Clone)]
@@ -285,14 +291,20 @@ mod tests {
     #[test]
     fn test_bump_instance_does_not_panic() {
         let env = Env::default();
-        bump_instance(&env);
+        let id = env.register(DummyContract, ());
+        env.as_contract(&id, || {
+            bump_instance(&env);
+        });
     }
 
     #[test]
-    fn test_bump_persistent_does_not_panic_on_missing_key() {
+    fn test_bump_persistent_does_not_panic_on_existing_key() {
         let env = Env::default();
-        // Key doesn't exist yet — extend_ttl on a missing key is a no-op in the test env.
-        bump_persistent(&env, &TestKey::Foo);
+        let id = env.register(DummyContract, ());
+        env.as_contract(&id, || {
+            env.storage().persistent().set(&TestKey::Foo, &1u32);
+            bump_persistent(&env, &TestKey::Foo);
+        });
     }
 
     #[test]
