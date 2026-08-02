@@ -56,6 +56,7 @@ fn test_admin_can_mint() {
 }
 
 #[test]
+#[should_panic(expected = "Amount must be positive")]
 fn test_cannot_mint_zero() {
     let e = Env::default();
     e.mock_all_auths();
@@ -66,11 +67,7 @@ fn test_cannot_mint_zero() {
     let user = Address::generate(&e);
 
     client.initialize(&admin, &INITIAL_SUPPLY);
-    let before = client.total_supply();
     client.mint(&user, &0);
-    // zero mint is a no-op: balance and supply unchanged
-    assert_eq!(client.balance(&user), 0);
-    assert_eq!(client.total_supply(), before);
 }
 
 #[test]
