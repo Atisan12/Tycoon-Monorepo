@@ -49,11 +49,12 @@ export const validationSchema = Joi.object({
   DB_LOGGING: Joi.boolean().truthy('true').falsy('false').default(false),
 
   // ─── JWT ────────────────────────────────────────────────────────────────────
-  // In production JWT_SECRET MUST be explicitly set — no fallback allowed.
+  // JWT_SECRET MUST be explicitly set in all non-test environments — no fallback allowed.
+  // A misconfigured NODE_ENV on a public host would otherwise allow token forgery.
   JWT_SECRET: Joi.when('NODE_ENV', {
-    is: isProd,
-    then: Joi.string().min(32).required(),
-    otherwise: Joi.string().default('dev-only-insecure-secret-change-me'),
+    is: 'test',
+    then: Joi.string().default('test-jwt-secret-for-test-environment-only'),
+    otherwise: Joi.string().min(32).required(),
   }),
   JWT_EXPIRES_IN: Joi.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN: Joi.string().default('7d'),
