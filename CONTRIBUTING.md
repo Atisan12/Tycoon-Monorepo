@@ -27,6 +27,7 @@ npm run dev             # start the dev server
 npm run build            # production build (also type-checks via `next build`)
 npm run typecheck        # tsc --noEmit
 npm run lint              # eslint
+npm run lint:ci           # non-mutating lint for files changed in the commit
 npm test -- --run         # run the Vitest suite once (CI mode)
 npm run test:coverage     # Vitest with coverage
 npm run storybook         # Storybook dev server
