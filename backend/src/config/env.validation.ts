@@ -28,6 +28,12 @@ export const validationSchema = Joi.object({
     .default(true),
   API_LEGACY_UNVERSIONED_SUNSET: Joi.string().isoDate().optional(),
   CORS_ORIGIN: Joi.string().default('http://localhost:3000'),
+  CORS_ALLOWED_ORIGINS: Joi.string().optional(),
+  WS_CORS_ORIGINS: Joi.when('NODE_ENV', {
+    is: isProd,
+    then: Joi.string().required().description('Comma-separated allowed origins for WebSocket; wildcard (*) not allowed in production'),
+    otherwise: Joi.string().optional().description('Comma-separated allowed origins for WebSocket'),
+  }),
   ENABLE_SWAGGER: Joi.boolean().truthy('true').falsy('false').default(false),
 
   // ─── Database ───────────────────────────────────────────────────────────────
