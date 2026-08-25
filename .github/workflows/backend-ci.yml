@@ -34,3 +34,15 @@ jobs:
 
       - name: Run backend tests
         run: npm test -- --runInBand
+
+      - name: Generate OpenAPI spec
+        run: npm run codegen
+
+      - name: Upload OpenAPI artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-spec
+          path: backend/openapi.json
+          retention-days: 7
+          compression-level: 9
