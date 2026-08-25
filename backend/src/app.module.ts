@@ -14,6 +14,7 @@ import { gameConfig } from './config/game.config';
 import { jwtConfig } from './config/jwt.config';
 import { redisConfig } from './config/redis.config';
 import { wsConfig } from './config/ws.config';
+import { emailConfig } from './config/email.config';
 import { nearConfig } from './config/near.config';
 import { CommonModule, HttpExceptionFilter, AppThrottlerGuard } from './common';
 import { SuspensionCheckMiddleware } from './common/middleware/suspension-check.middleware';
@@ -63,6 +64,7 @@ import { NotificationsModule } from './modules/fetch-notification/notifications.
         redisConfig,
         uploadConfig,
         wsConfig,
+        emailConfig,
         nearConfig,
       ],
       envFilePath: '.env',

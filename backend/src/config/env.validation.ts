@@ -160,6 +160,16 @@ export const validationSchema = Joi.object({
     .default(5000)
     .description('Timeout for async audit operations in milliseconds'),
 
+  // ─── Email Configuration ───────────────────────────────────────────────────
+  // EMAIL_PROVIDER: noop (development/test) or real provider (sendgrid, ses, etc)
+  EMAIL_PROVIDER: Joi.when('NODE_ENV', {
+    is: isProd,
+    then: Joi.string()
+      .required()
+      .description('Email provider in production; cannot be noop'),
+    otherwise: Joi.string().default('noop'),
+  }),
+
   // ─── NEAR RPC Facade ────────────────────────────────────────────────────────
   NEAR_NETWORK: Joi.string()
     .valid('mainnet', 'testnet', 'localnet')
