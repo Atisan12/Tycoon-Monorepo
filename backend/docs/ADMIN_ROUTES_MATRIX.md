@@ -16,13 +16,21 @@ The backend uses two primary guards for admin access control:
 **Controller**: `AdminAnalyticsController`  
 **Guards**: `JwtAuthGuard`, `AdminGuard`
 
-| HTTP Method | Path | Purpose | Guard Used |
-|-------------|------|---------|------------|
-| GET | `/admin/analytics/dashboard` | Get dashboard analytics overview | AdminGuard |
-| GET | `/admin/analytics/users/total` | Get total users count | AdminGuard |
-| GET | `/admin/analytics/users/active` | Get active users count | AdminGuard |
-| GET | `/admin/analytics/games/total` | Get total games count | AdminGuard |
-| GET | `/admin/analytics/games/players/total` | Get total game players count | AdminGuard |
+| HTTP Method | Path | Purpose | Guard Used | Rate Limit |
+|-------------|------|---------|------------|------------|
+| GET | `/admin/analytics/dashboard` | Get dashboard analytics overview | AdminGuard | 5 req/min |
+| GET | `/admin/analytics/shop` | Get shop sales & conversion analytics | AdminGuard | 5 req/min |
+| GET | `/admin/analytics/users/total` | Get total users count | AdminGuard | 20 req/min |
+| GET | `/admin/analytics/users/active` | Get active users count | AdminGuard | 20 req/min |
+| GET | `/admin/analytics/games/total` | Get total games count | AdminGuard | 20 req/min |
+| GET | `/admin/analytics/games/players/total` | Get total game players count | AdminGuard | 20 req/min |
+
+**Rate Limiting Policy**:
+- **Expensive aggregations** (dashboard, shop): 5 requests per minute — Postgres aggregation queries are resource-intensive
+- **Simple count queries** (users/games): 20 requests per minute — Direct count() operations with lighter index scans
+- Global default: 100 requests per minute
+- Health check endpoints (`/health/*`) remain unthrottled
+- Exceeding limits returns 429 Too Many Requests
 
 ---
 

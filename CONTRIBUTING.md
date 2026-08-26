@@ -44,6 +44,24 @@ Before opening a PR that touches `frontend/`, make sure `npm test -- --run`, `np
 4. Commit using [Conventional Commits](https://www.conventionalcommits.org/) (`feat(...)`, `fix(...)`, `docs(...)`, etc.).
 5. Open a PR against `main` using the PR template, referencing the issue with `closes #<issue-number>`.
 
+## Shop Purchase Write Path
+
+The shop purchase logic is governed by [ADR-001](backend/docs/ADR-001-shop-purchase-ownership.md), which establishes:
+
+- **Single Write Path:** All purchase writes flow through `shop-api` (`POST /shop-api/purchases`)
+- **Backend Proxy:** The backend's `POST /shop/purchase` endpoint proxies to shop-api (details in ADR-001)
+- **Idempotency Contract:** All clients must send the `Idempotency-Key` header for purchases (documented in `SHOP_PURCHASES_RUNBOOK.md`)
+
+**When touching purchase code**, verify:
+1. No dual-writes (a single purchase request should result in exactly one record in shop-api)
+2. The idempotency key is passed through correctly and honored by both endpoints
+3. Schema/field mappings between backend DTOs and shop-api requests are documented
+4. Audit trails show shop-api as the source of truth
+
+Refer to the runbook for operational procedures and the ADR for architectural decisions.
+
+---
+
 ## Picking up your first issue
 
 New to the codebase? Start with issues labeled [`good first issue`](https://github.com/SaboStudios/Tycoon-Monorepo/labels/good%20first%20issue) — these are scoped to a single file or small area. Once you're comfortable with the codebase conventions, move on to [`help wanted`](https://github.com/SaboStudios/Tycoon-Monorepo/labels/help%20wanted) issues, which are larger or touch more of the system. Issues are also labeled by area (`frontend`, `backend`, `contract`) to help you find ones matching your experience.
