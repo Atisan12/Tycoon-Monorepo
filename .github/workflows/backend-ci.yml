@@ -64,6 +64,9 @@ jobs:
       - name: Lint backend
         run: npm run lint:ci
 
+      - name: Verify admin guard coverage
+        run: npx ts-node scripts/verify-admin-guards.ts
+
       - name: Build backend
         run: npm run build
 
