@@ -84,6 +84,16 @@ export const validationSchema = Joi.object({
     .falsy('false')
     .default(true),
 
+  // ─── ClamAV virus scanning ──────────────────────────────────────────────────
+  // CLAMAV_HOST is required in production to prevent unscanned uploads from reaching S3.
+  // In development/test, the scan is gracefully skipped with a logged warning.
+  CLAMAV_HOST: Joi.when('NODE_ENV', {
+    is: isProd,
+    then: Joi.string().required().description('ClamAV host required in production'),
+    otherwise: Joi.string().allow('').optional(),
+  }),
+  CLAMAV_PORT: Joi.number().optional(),
+
   // ─── Logging ────────────────────────────────────────────────────────────────
   LOG_LEVEL: Joi.string()
     .valid('error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly')
