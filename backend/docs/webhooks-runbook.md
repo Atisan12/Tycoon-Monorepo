@@ -13,8 +13,16 @@ This runbook covers operational procedures for managing webhooks in the Tycoon b
 ### Key Metrics
 - Webhook processing rate
 - Signature verification success/failure ratio
+- `webhook_sig_fail` — signature verification failure counter by source (metric name: `webhook_sig_fail`, labels: `source`)
 - Idempotency hit rate (duplicate webhook detection)
 - Processing latency
+
+### Observability Checklist
+- [x] Signature verification integration test coverage (invalid-signature path proven rejected with 401)
+- [x] Idempotent replay test coverage (same event ID replayed as safe no-op)
+- [x] `webhook_sig_fail` metric added for signature verification failures by source
+- [x] No raw secrets logged (sanitized context, constant-time comparison)
+- [x] OpenTelemetry instrumentation in place (prom-client Histogram/Counter metrics)
 
 ### Alerts
 - High rate of signature verification failures (>5% in 5 minutes)
