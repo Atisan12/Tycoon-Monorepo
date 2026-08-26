@@ -4,6 +4,7 @@ import { LedgerDiscrepancy } from './entities/ledger-discrepancy.entity';
 import { LedgerReconciliationService } from './ledger-reconciliation.service';
 import { LedgerReconciliationScheduler } from './ledger-reconciliation.scheduler';
 import { LedgerReconciliationController } from './ledger-reconciliation.controller';
+import { LedgerReconciliationObservabilityService } from './ledger-reconciliation-observability.service';
 import { StubPaymentProviderClient } from './providers/stub-payment-provider.client';
 import { Purchase } from '../shop/entities/purchase.entity';
 import { ConfigService } from '@nestjs/config';
@@ -14,6 +15,7 @@ import { StripePaymentProviderClient } from './providers/stripe-payment-provider
   providers: [
     LedgerReconciliationService,
     LedgerReconciliationScheduler,
+    LedgerReconciliationObservabilityService,
     StubPaymentProviderClient,
     StripePaymentProviderClient,
     {
