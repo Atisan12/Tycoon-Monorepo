@@ -117,6 +117,12 @@ The backend uses two primary guards for admin access control:
 | DELETE | `/admin/waitlist/:id` | Soft delete a waitlist entry | AdminGuard |
 | DELETE | `/admin/waitlist/:id/permanent` | Permanently delete a waitlist entry | AdminGuard |
 
+**Bulk Import Limits** (`POST /admin/waitlist/bulk-import`):
+- **Maximum file size**: 10 MB (exceeding returns HTTP 413 Payload Too Large)
+- **Maximum rows**: 10,000 data rows (exceeding returns HTTP 400 Bad Request)
+- Limits are enforced early in the streaming pipeline before database processing to prevent OOM or DoS attacks
+- Error responses include the specific limit exceeded and its configured value
+
 ---
 
 ### 7. Chance Module
