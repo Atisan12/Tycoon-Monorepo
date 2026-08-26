@@ -332,7 +332,7 @@ Data source for the CLI: `src/config/database.config.ts` (exports `AppDataSource
 
 - **Single step:** `npm run migration:revert` runs the `down` method of the latest migration only. Repeat to roll back further.
 - **Production:** prefer forward-fix migrations when possible. For incidents, restore from backup or revert in a controlled window after testing `down` in staging.
-- **CI:** the pipeline applies migrations to an ephemeral PostgreSQL instance so bad migrations fail before deploy.
+- **CI:** [`backend-ci.yml`](../.github/workflows/backend-ci.yml) applies migrations to an ephemeral PostgreSQL instance and fails if any remain pending.
 
 ### pgAdmin Access
 

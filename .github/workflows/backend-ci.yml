@@ -36,7 +36,7 @@ jobs:
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       DB_DATABASE: tycoon_test
-      DB_SYNCHRONIZE: true
+      DB_SYNCHRONIZE: false
       REDIS_HOST: localhost
       REDIS_PORT: 6379
       JWT_SECRET: ci-only-jwt-secret
@@ -66,6 +66,11 @@ jobs:
 
       - name: Build backend
         run: npm run build
+
+      - name: Verify migrations on empty database
+        run: |
+          npm run migration:run
+          ! npm run migration:show | grep -q '\[ \]'
 
       - name: Run backend tests
         run: npm test -- --runInBand

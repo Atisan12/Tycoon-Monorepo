@@ -21,6 +21,16 @@ import { RedisService } from '../redis/redis.service';
 import { secureRandomHex } from '../../common/crypto-secure-random';
 import { PaginationService, PaginatedResponse } from '../../common';
 import { MAX_BULK_UPDATE_ITEMS } from './dto/bulk-update-shop-items.dto';
+import { NotificationsService } from '../fetch-notification/notifications.service';
+import { NotificationType } from '../fetch-notification/entities/notification.entity';
+import { Counter, register } from 'prom-client';
+
+const giftsNotifiedTotal =
+  (register.getSingleMetric('gifts_notified_total') as Counter<string>) ??
+  new Counter({
+    name: 'gifts_notified_total',
+    help: 'Gift receiver notifications created successfully',
+  });
 
 /** @deprecated Use PaginatedResponse<ShopItem> from common instead. */
 export type PaginatedShopItems = PaginatedResponse<ShopItem>;
@@ -39,6 +49,7 @@ export class ShopService {
     private readonly dataSource: DataSource,
     private readonly redisService: RedisService,
     private readonly paginationService: PaginationService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -240,8 +251,18 @@ export class ShopService {
         `purchaseAndGift successful: purchase ${savedPurchase.id}, gift ${savedGift.id}`,
       );
 
-      // 9. TODO: Notify receiver (implement notification service)
-      // await this.notificationService.notifyGiftReceived(receiver_id, savedGift);
+      try {
+        const notification = await this.notificationsService.create({
+          userId: receiver_id.toString(),
+          type: NotificationType.GIFT_RECEIVED,
+          title: 'Gift received',
+          content: `Sender ${senderId} sent ${quantity} × item ${shop_item_id} (${shopItem.name}); gift ${savedGift.id}.`,
+        });
+        if (notification) giftsNotifiedTotal.inc();
+        else this.logger.warn(`Gift ${savedGift.id} committed without notification`);
+      } catch (error) {
+        this.logger.warn(`Gift ${savedGift.id} committed; notification failed: ${error.message}`);
+      }
 
       return {
         purchase: savedPurchase,
