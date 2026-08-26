@@ -187,6 +187,7 @@ export class ShopController {
   @Post('gift')
   @AuditLog(AuditAction.GIFT_SENT)
   @UseGuards(JwtAuthGuard)
+  @UseInterceptors(IdempotencyInterceptor)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Purchase and gift an item to another user' })

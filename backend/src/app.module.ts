@@ -50,6 +50,7 @@ import { PrivacyModule } from './modules/privacy/privacy.module';
 import { NearModule } from './modules/near/near.module';
 import { LedgerReconciliationModule } from './modules/ledger-reconciliation/ledger-reconciliation.module';
 import { NotificationsModule } from './modules/fetch-notification/notifications.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
 
 @Module({
   imports: [
@@ -135,6 +136,7 @@ import { NotificationsModule } from './modules/fetch-notification/notifications.
     LedgerReconciliationModule,
     NearModule,
     NotificationsModule,
+    UploadsModule,
   ],
   controllers: [AppController],
   providers: [
