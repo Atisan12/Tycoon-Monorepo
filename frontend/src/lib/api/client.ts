@@ -9,7 +9,13 @@ const RETRYABLE_STATUSES = new Set([408, 429, 502, 503, 504]);
 
 function getAuthHeaders(): Record<string, string> {
   if (typeof window === 'undefined') return {};
-  const token = localStorage.getItem('access_token');
+  // Canonical key is 'accessToken' (camelCase), matching backend DTO.
+  // Migration fallback: if not found, try legacy snake_case key for existing sessions.
+  let token = localStorage.getItem('accessToken');
+  if (!token) {
+    token = localStorage.getItem('access_token');
+    if (token) localStorage.setItem('accessToken', token);
+  }
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
