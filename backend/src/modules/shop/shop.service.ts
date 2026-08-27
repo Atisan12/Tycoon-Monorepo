@@ -358,20 +358,25 @@ export class ShopService {
   }
 
   /**
-   * Invalidate shop caches
+   * Invalidate shop caches via version bumping.
+   * Instead of deleting cache entries directly, we increment the shop:catalog version,
+   * causing the CacheInterceptor to generate new cache keys on subsequent GET requests.
+   * This avoids broad Redis KEYS operations that can block large instances.
    */
   private async invalidateCache(id?: number): Promise<void> {
     this.logger.debug(`Invalidating shop cache${id ? ` for item ${id}` : ''}`);
-    // Invalidate the list cache
-    await this.redisService.delByPattern('tycoon:shop:items:*');
+    // Bump the shop catalog cache version — this makes all old cache entries miss naturally
+    await this.redisService.incrementCacheVersion('shop:catalog');
 
-    // If a specific ID is provided, invalidate its detail cache
+    // If a specific ID is provided, also delete its detail cache if applicable
     if (id) {
-      await this.redisService.delByPattern(`tycoon:shop:item:items:${id}:*`);
-      // Note: AdvancedCacheInterceptor uses url segments, so shop/items/1 becomes shop:items:1
-      // but my keyPrefix was 'shop:item'. Let's check the logic.
-      // Url /api/v1/shop/items/1 -> segments: shop, items, 1 -> tycoon:shop:item:shop:items:1:public:{}
-      // Wait, I should probably standardize the keyPrefix in controllers.
+      await this.redisService.delByPattern(
+        `tycoon:shop:item:items:${id}:*`,
+      ).catch((err) =>
+        this.logger.warn(
+          `Failed to delete item detail cache for ${id}: ${err.message}`,
+        ),
+      );
     }
   }
 }
